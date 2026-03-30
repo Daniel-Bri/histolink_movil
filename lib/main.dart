@@ -9,6 +9,16 @@ void main() {
   runApp(const HistolinkApp());
 }
 
+class AppColors {
+  static const azulElectrico = Color(0xFF0023B8);
+  static const azulPuro      = Color(0xFF0000FF);
+  static const azulCielo     = Color(0xFFB3D4FF);
+  static const mentaVibrante = Color(0xFF00B870);
+  static const mentaSuave    = Color(0xFFCCFAF4);
+  static const fondo         = Color(0xFFF0F6FF);
+  static const alerta        = Color(0xFFFEE2E2);
+}
+
 class HistolinkApp extends StatelessWidget {
   const HistolinkApp({super.key});
 
@@ -18,8 +28,35 @@ class HistolinkApp extends StatelessWidget {
       title: 'Histolink',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF1976D2)),
         useMaterial3: true,
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: AppColors.azulElectrico,
+          primary: AppColors.azulElectrico,
+          secondary: AppColors.mentaVibrante,
+          surface: AppColors.fondo,
+        ),
+        inputDecorationTheme: InputDecorationTheme(
+          filled: true,
+          fillColor: Colors.white,
+          labelStyle: const TextStyle(color: AppColors.azulElectrico),
+          prefixIconColor: AppColors.azulElectrico,
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(10),
+            borderSide: const BorderSide(color: AppColors.azulPuro, width: 2),
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(10),
+            borderSide: BorderSide(color: AppColors.azulCielo.withOpacity(0.8), width: 1.5),
+          ),
+          errorBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(10),
+            borderSide: const BorderSide(color: Color(0xFFE53E3E), width: 1.5),
+          ),
+          focusedErrorBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(10),
+            borderSide: const BorderSide(color: Color(0xFFE53E3E), width: 2),
+          ),
+        ),
       ),
       home: const _SplashRouter(),
     );
@@ -56,17 +93,38 @@ class _SplashRouterState extends State<_SplashRouter> {
 
   @override
   Widget build(BuildContext context) {
-    return const Scaffold(
-      backgroundColor: Color(0xFF1976D2),
+    return Scaffold(
+      backgroundColor: AppColors.azulElectrico,
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.local_hospital, color: Colors.white, size: 64),
-            SizedBox(height: 16),
-            Text('Histolink', style: TextStyle(color: Colors.white, fontSize: 28, fontWeight: FontWeight.bold)),
-            SizedBox(height: 24),
-            CircularProgressIndicator(color: Colors.white70),
+            Container(
+              width: 80,
+              height: 80,
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.15),
+                borderRadius: BorderRadius.circular(24),
+                border: Border.all(color: Colors.white30, width: 1.5),
+              ),
+              child: const Icon(Icons.local_hospital, color: Colors.white, size: 44),
+            ),
+            const SizedBox(height: 20),
+            const Text(
+              'Histolink',
+              style: TextStyle(color: Colors.white, fontSize: 30, fontWeight: FontWeight.bold, letterSpacing: 1),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Sistema de Gestión Documental Clínico',
+              style: TextStyle(color: Colors.white.withOpacity(0.7), fontSize: 12),
+            ),
+            const SizedBox(height: 40),
+            const SizedBox(
+              width: 28,
+              height: 28,
+              child: CircularProgressIndicator(color: AppColors.mentaVibrante, strokeWidth: 2.5),
+            ),
           ],
         ),
       ),

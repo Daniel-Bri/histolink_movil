@@ -1,20 +1,25 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/user_model.dart';
 
 class AuthService {
-  // Web/Chrome: localhost:8000
-  // Emulador Android: 10.0.2.2:8000
-  // Dispositivo físico: IP local de tu PC (ej: 192.168.1.x:8000)
-  static const String _baseUrl = 'http://10.0.2.2:8000/api/auth';
+  // Se selecciona automáticamente según la plataforma:
+  //   Web/Chrome        → localhost:8000
+  //   Emulador Android  → 10.0.2.2:8000
+  //   Dispositivo físico → cambia a la IP local de tu PC
+  static String get _host =>
+      kIsWeb ? 'localhost:8000' : '10.0.2.2:8000';
+
+  static Uri _uri(String path) => Uri.http(_host, path);
 
   static const String _keyAccessToken = 'access_token';
   static const String _keyRefreshToken = 'refresh_token';
 
   Future<UserModel> login(String username, String password) async {
     final response = await http.post(
-      Uri.parse('$_baseUrl/login/'),
+      _uri('/api/auth/login/'),
       headers: {'Content-Type': 'application/json'},
       body: jsonEncode({'username': username, 'password': password}),
     );
@@ -40,7 +45,7 @@ class AuthService {
       final token = prefs.getString(_keyAccessToken);
       try {
         await http.post(
-          Uri.parse('$_baseUrl/logout/'),
+          _uri('/api/auth/logout/'),
           headers: {
             'Content-Type': 'application/json',
             'Authorization': 'Bearer $token',
