@@ -4,8 +4,9 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../models/user_model.dart';
 
 class AuthService {
-  // En emulador Android usa 10.0.2.2 para acceder a localhost de la PC.
-  // En dispositivo físico, cambia por la IP local de tu PC (ej: 192.168.1.x).
+  // Web/Chrome: localhost:8000
+  // Emulador Android: 10.0.2.2:8000
+  // Dispositivo físico: IP local de tu PC (ej: 192.168.1.x:8000)
   static const String _baseUrl = 'http://10.0.2.2:8000/api/auth';
 
   static const String _keyAccessToken = 'access_token';
