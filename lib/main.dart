@@ -1,22 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-import 'screens/login_screen.dart';
-import 'screens/dashboard_screen.dart';
-import 'services/auth_service.dart';
-import 'models/user_model.dart';
+import 'package:histolink/shared/theme/app_colors.dart';
+import 'package:histolink/shared/screens/dashboard_screen.dart';
+import 'package:histolink/shared/models/user_model.dart';
+import 'package:histolink/GestionDeUsuarios/LoginYAutenticacion/screens/login_screen.dart';
+import 'package:histolink/GestionDeUsuarios/LoginYAutenticacion/services/auth_service.dart';
 
 void main() {
   runApp(const HistolinkApp());
-}
-
-class AppColors {
-  static const azulElectrico = Color(0xFF0023B8);
-  static const azulPuro      = Color(0xFF0000FF);
-  static const azulCielo     = Color(0xFFB3D4FF);
-  static const mentaVibrante = Color(0xFF00B870);
-  static const mentaSuave    = Color(0xFFCCFAF4);
-  static const fondo         = Color(0xFFF0F6FF);
-  static const alerta        = Color(0xFFFEE2E2);
 }
 
 class HistolinkApp extends StatelessWidget {
@@ -82,8 +72,7 @@ class _SplashRouterState extends State<_SplashRouter> {
     final loggedIn = await AuthService().isLoggedIn();
     if (!mounted) return;
     if (loggedIn) {
-      final prefs = await SharedPreferences.getInstance();
-      final username = prefs.getString('cached_username') ?? '';
+      final username = await AuthService().getCachedUsername();
       final user = UserModel(id: 0, username: username, email: '', firstName: '', lastName: '', groups: []);
       Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => DashboardScreen(user: user)));
     } else {

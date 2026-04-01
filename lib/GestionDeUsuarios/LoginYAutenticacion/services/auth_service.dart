@@ -1,8 +1,8 @@
 import 'dart:convert';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:http/http.dart' as http;
-import 'package:shared_preferences/shared_preferences.dart';
-import '../models/user_model.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:histolink/shared/models/user_model.dart';
 
 class AuthService {
   // Se selecciona automáticamente según la plataforma:
@@ -14,8 +14,12 @@ class AuthService {
 
   static Uri _uri(String path) => Uri.http(_host, path);
 
-  static const String _keyAccessToken = 'access_token';
+  // Android Keystore (AES-256) en Android · Keychain en iOS
+  static const _storage = FlutterSecureStorage();
+
+  static const String _keyAccessToken  = 'access_token';
   static const String _keyRefreshToken = 'refresh_token';
+  static const String _keyUsername     = 'cached_username';
 
   Future<UserModel> login(String username, String password) async {
     final response = await http.post(
@@ -26,10 +30,11 @@ class AuthService {
 
     if (response.statusCode == 200) {
       final data = jsonDecode(response.body);
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setString(_keyAccessToken, data['access']);
-      await prefs.setString(_keyRefreshToken, data['refresh']);
-      return UserModel.fromJson(data['user']);
+      await _storage.write(key: _keyAccessToken,  value: data['access']);
+      await _storage.write(key: _keyRefreshToken, value: data['refresh']);
+      final user = UserModel.fromJson(data['user']);
+      await _storage.write(key: _keyUsername, value: user.username);
+      return user;
     } else {
       final data = jsonDecode(response.body);
       final message = data['detail'] ?? data['non_field_errors']?[0] ?? 'Credenciales incorrectas';
@@ -38,11 +43,10 @@ class AuthService {
   }
 
   Future<void> logout() async {
-    final prefs = await SharedPreferences.getInstance();
-    final refresh = prefs.getString(_keyRefreshToken);
+    final refresh = await _storage.read(key: _keyRefreshToken);
 
     if (refresh != null) {
-      final token = prefs.getString(_keyAccessToken);
+      final token = await _storage.read(key: _keyAccessToken);
       try {
         await http.post(
           _uri('/api/auth/logout/'),
@@ -57,17 +61,21 @@ class AuthService {
       }
     }
 
-    await prefs.remove(_keyAccessToken);
-    await prefs.remove(_keyRefreshToken);
+    await _storage.delete(key: _keyAccessToken);
+    await _storage.delete(key: _keyRefreshToken);
+    await _storage.delete(key: _keyUsername);
   }
 
   Future<bool> isLoggedIn() async {
-    final prefs = await SharedPreferences.getInstance();
-    return prefs.containsKey(_keyAccessToken);
+    final token = await _storage.read(key: _keyAccessToken);
+    return token != null && token.isNotEmpty;
   }
 
   Future<String?> getToken() async {
-    final prefs = await SharedPreferences.getInstance();
-    return prefs.getString(_keyAccessToken);
+    return _storage.read(key: _keyAccessToken);
+  }
+
+  Future<String> getCachedUsername() async {
+    return await _storage.read(key: _keyUsername) ?? '';
   }
 }

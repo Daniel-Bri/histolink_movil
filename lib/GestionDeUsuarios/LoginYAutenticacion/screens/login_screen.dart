@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import '../main.dart' show AppColors;
-import '../services/auth_service.dart';
-import '../models/user_model.dart';
-import 'dashboard_screen.dart';
+import 'package:histolink/shared/theme/app_colors.dart';
+import 'package:histolink/GestionDeUsuarios/LoginYAutenticacion/services/auth_service.dart';
+import 'package:histolink/shared/models/user_model.dart';
+import 'package:histolink/shared/screens/dashboard_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -28,7 +28,7 @@ class _LoginScreenState extends State<LoginScreen> {
     super.dispose();
   }
 
-  Future<void> _login() async {
+  Future<void> _login() async {  //validaciiones lpgin
     if (!_formKey.currentState!.validate()) return;
 
     setState(() {
@@ -155,7 +155,7 @@ class _LoginScreenState extends State<LoginScreen> {
                             ),
                             const SizedBox(height: 24),
 
-                            // Campo usuario
+                            // Campo usuario - validaciones
                             TextFormField(
                               controller: _usernameController,
                               decoration: const InputDecoration(
@@ -187,7 +187,7 @@ class _LoginScreenState extends State<LoginScreen> {
                               validator: (v) => (v == null || v.isEmpty) ? 'Ingresa tu contraseña' : null,
                             ),
 
-                            // Mensaje de error
+                            // Mensaje de error - validacion
                             if (_errorMessage != null) ...[
                               const SizedBox(height: 16),
                               Container(

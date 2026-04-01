@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import '../main.dart' show AppColors;
-import '../models/user_model.dart';
-import '../services/auth_service.dart';
-import 'login_screen.dart';
+import 'package:histolink/shared/theme/app_colors.dart';
+import 'package:histolink/shared/models/user_model.dart';
+import 'package:histolink/GestionDeUsuarios/LoginYAutenticacion/services/auth_service.dart';
+import 'package:histolink/GestionDeUsuarios/LoginYAutenticacion/screens/login_screen.dart';
 
 class DashboardScreen extends StatelessWidget {
   final UserModel user;
