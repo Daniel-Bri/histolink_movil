@@ -5,14 +5,10 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:histolink/shared/models/user_model.dart';
 
 class AuthService {
-  // Se selecciona automáticamente según la plataforma:
-  //   Web/Chrome        → localhost:8000
-  //   Emulador Android  → 10.0.2.2:8000
-  //   Dispositivo físico → cambia a la IP local de tu PC
-  static String get _host =>
-      kIsWeb ? 'localhost:8000' : '10.0.2.2:8000';
+  // Backend en Railway (producción)
+  static const String _baseUrl = 'https://histolinkbackend-production.up.railway.app';
 
-  static Uri _uri(String path) => Uri.http(_host, path);
+  static Uri _uri(String path) => Uri.parse('$_baseUrl$path');
 
   // Android Keystore (AES-256) en Android · Keychain en iOS
   static const _storage = FlutterSecureStorage();
