@@ -3,6 +3,7 @@ import 'package:histolink/shared/theme/app_colors.dart';
 import 'package:histolink/shared/models/user_model.dart';
 import 'package:histolink/GestionDeUsuarios/LoginYAutenticacion/services/auth_service.dart';
 import 'package:histolink/GestionDeUsuarios/LoginYAutenticacion/screens/login_screen.dart';
+import 'package:histolink/GestionDeUsuarios/RegistroYBusquedaDePacientes/screens/registro_y_busqueda_de_pacientes_screen.dart';
 
 class DashboardScreen extends StatelessWidget {
   final UserModel user;
@@ -159,26 +160,34 @@ class DashboardScreen extends StatelessWidget {
               crossAxisSpacing: 14,
               mainAxisSpacing: 14,
               childAspectRatio: 1.05,
-              children: const [
+              children: [
                 _MenuCard(
                   icon: Icons.people_outline_rounded,
                   label: 'Pacientes',
                   iconColor: AppColors.azulPuro,
                   bgColor: AppColors.azulCielo,
+                  onTap: () {
+                    Navigator.push<void>(
+                      context,
+                      MaterialPageRoute<void>(
+                        builder: (_) => const RegistroYBusquedaDePacientesScreen(),
+                      ),
+                    );
+                  },
                 ),
-                _MenuCard(
+                const _MenuCard(
                   icon: Icons.assignment_outlined,
                   label: 'Consultas',
                   iconColor: AppColors.mentaVibrante,
                   bgColor: AppColors.mentaSuave,
                 ),
-                _MenuCard(
+                const _MenuCard(
                   icon: Icons.science_outlined,
                   label: 'Laboratorio',
                   iconColor: AppColors.azulElectrico,
                   bgColor: AppColors.azulCielo,
                 ),
-                _MenuCard(
+                const _MenuCard(
                   icon: Icons.medication_outlined,
                   label: 'Farmacia',
                   iconColor: AppColors.mentaVibrante,
@@ -244,12 +253,14 @@ class _MenuCard extends StatelessWidget {
   final String label;
   final Color iconColor;
   final Color bgColor;
+  final VoidCallback? onTap;
 
   const _MenuCard({
     required this.icon,
     required this.label,
     required this.iconColor,
     required this.bgColor,
+    this.onTap,
   });
 
   @override
@@ -270,7 +281,7 @@ class _MenuCard extends StatelessWidget {
         color: Colors.transparent,
         child: InkWell(
           borderRadius: BorderRadius.circular(18),
-          onTap: () {},
+          onTap: onTap ?? () {},
           child: Padding(
             padding: const EdgeInsets.all(20),
             child: Column(
