@@ -5,11 +5,6 @@ import 'package:histolink/shared/models/user_model.dart';
 import 'package:histolink/shared/config/api_config.dart';
 
 class AuthService {
-  // Backend en Railway (producción)
-  static const String _baseUrl = 'https://histolinkbackend-production.up.railway.app';
-
-  static Uri _uri(String path) => Uri.parse('$_baseUrl$path');
-
   // Android Keystore (AES-256) en Android · Keychain en iOS
   static const _storage = FlutterSecureStorage();
 
