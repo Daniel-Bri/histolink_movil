@@ -1,8 +1,8 @@
 import 'dart:convert';
-import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:http/http.dart' as http;
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:histolink/shared/models/user_model.dart';
+import 'package:histolink/shared/config/api_config.dart';
 
 class AuthService {
   // Backend en Railway (producción)
@@ -19,7 +19,7 @@ class AuthService {
 
   Future<UserModel> login(String username, String password) async {
     final response = await http.post(
-      _uri('/api/auth/login/'),
+      ApiConfig.uri('/api/auth/login/'),
       headers: {'Content-Type': 'application/json'},
       body: jsonEncode({'username': username, 'password': password}),
     );
@@ -45,7 +45,7 @@ class AuthService {
       final token = await _storage.read(key: _keyAccessToken);
       try {
         await http.post(
-          _uri('/api/auth/logout/'),
+          ApiConfig.uri('/api/auth/logout/'),
           headers: {
             'Content-Type': 'application/json',
             'Authorization': 'Bearer $token',
@@ -62,9 +62,36 @@ class AuthService {
     await _storage.delete(key: _keyUsername);
   }
 
+  /// Verifica si hay sesión activa comprobando que el access token
+  /// existe Y no ha expirado (decodifica el claim `exp` del JWT).
   Future<bool> isLoggedIn() async {
     final token = await _storage.read(key: _keyAccessToken);
-    return token != null && token.isNotEmpty;
+    if (token == null || token.isEmpty) return false;
+
+    try {
+      final parts = token.split('.');
+      if (parts.length != 3) return false;
+
+      // base64url → base64 estándar (reemplazar chars y agregar padding)
+      var payload = parts[1].replaceAll('-', '+').replaceAll('_', '/');
+      switch (payload.length % 4) {
+        case 2:
+          payload += '==';
+          break;
+        case 3:
+          payload += '=';
+          break;
+      }
+
+      final decoded = jsonDecode(utf8.decode(base64.decode(payload)));
+      final exp = decoded['exp'] as int?;
+      if (exp == null) return false;
+
+      // exp es Unix timestamp en segundos
+      return DateTime.now().millisecondsSinceEpoch < exp * 1000;
+    } catch (_) {
+      return false;
+    }
   }
 
   Future<String?> getToken() async {
