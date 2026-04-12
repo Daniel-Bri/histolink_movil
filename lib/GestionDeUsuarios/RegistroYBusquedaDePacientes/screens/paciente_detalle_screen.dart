@@ -3,6 +3,7 @@ import 'package:histolink/shared/theme/app_colors.dart';
 import 'package:histolink/shared/widgets/loading_indicator.dart';
 import 'package:histolink/GestionDeUsuarios/RegistroYBusquedaDePacientes/models/paciente_model.dart';
 import 'package:histolink/GestionDeUsuarios/RegistroYBusquedaDePacientes/services/paciente_service.dart';
+import 'package:histolink/GestionDeUsuarios/VisualizacionDelExpediente/screens/visualizacion_del_expediente_screen.dart';
 
 class PacienteDetalleScreen extends StatefulWidget {
   const PacienteDetalleScreen({super.key, required this.pacienteId});
@@ -147,9 +148,34 @@ class _PacienteDetalleScreenState extends State<PacienteDetalleScreen> {
                             ),
                           ),
                           const SizedBox(height: 24),
-                          Text(
-                            'Próximamente: historial clínico, consultas y documentos en esta vista de expediente.',
-                            style: TextStyle(fontSize: 13, color: Colors.grey.shade600, fontStyle: FontStyle.italic),
+                          SizedBox(
+                            width: double.infinity,
+                            child: ElevatedButton.icon(
+                              onPressed: () {
+                                Navigator.push<void>(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (_) => VisualizacionDelExpedienteScreen(
+                                      pacienteId: widget.pacienteId,
+                                    ),
+                                  ),
+                                );
+                              },
+                              icon: const Icon(Icons.folder_open_outlined),
+                              label: const Text(
+                                'Ver expediente completo',
+                                style: TextStyle(fontWeight: FontWeight.w600, fontSize: 15),
+                              ),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: AppColors.azulElectrico,
+                                foregroundColor: Colors.white,
+                                padding: const EdgeInsets.symmetric(vertical: 14),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                elevation: 0,
+                              ),
+                            ),
                           ),
                         ],
                       ),
