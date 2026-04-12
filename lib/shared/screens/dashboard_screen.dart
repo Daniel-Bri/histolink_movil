@@ -3,7 +3,7 @@ import 'package:histolink/shared/theme/app_colors.dart';
 import 'package:histolink/shared/models/user_model.dart';
 import 'package:histolink/GestionDeUsuarios/LoginYAutenticacion/services/auth_service.dart';
 import 'package:histolink/GestionDeUsuarios/LoginYAutenticacion/screens/login_screen.dart';
-import 'package:histolink/GestionDeUsuarios/VisualizacionDelExpediente/screens/visualizacion_del_expediente_screen.dart';
+import 'package:histolink/GestionDeUsuarios/RegistroYBusquedaDePacientes/screens/registro_y_busqueda_de_pacientes_screen.dart';
 
 class DashboardScreen extends StatelessWidget {
   final UserModel user;
@@ -167,10 +167,10 @@ class DashboardScreen extends StatelessWidget {
                   iconColor: AppColors.azulPuro,
                   bgColor: AppColors.azulCielo,
                   onTap: () {
-                    Navigator.push(
+                    Navigator.push<void>(
                       context,
-                      MaterialPageRoute(
-                        builder: (_) => const VisualizacionDelExpedienteScreen(),
+                      MaterialPageRoute<void>(
+                        builder: (_) => const RegistroYBusquedaDePacientesScreen(),
                       ),
                     );
                   },
