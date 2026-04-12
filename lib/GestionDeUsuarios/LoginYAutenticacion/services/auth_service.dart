@@ -5,8 +5,10 @@ import 'package:histolink/shared/models/user_model.dart';
 import 'package:histolink/shared/config/api_config.dart';
 
 class AuthService {
-  // Android Keystore (AES-256) en Android · Keychain en iOS
-  static final _storage = FlutterSecureStorage();
+  // encryptedSharedPreferences evita cuelgues de keystore en Android
+  static final _storage = const FlutterSecureStorage(
+    aOptions: AndroidOptions(encryptedSharedPreferences: true),
+  );
 
   static const String _keyAccessToken  = 'access_token';
   static const String _keyRefreshToken = 'refresh_token';
