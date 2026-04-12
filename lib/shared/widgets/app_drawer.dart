@@ -92,7 +92,11 @@ class AppDrawer extends StatelessWidget {
   const AppDrawer({super.key, required this.user, this.activeLabel});
 
   Future<void> _logout(BuildContext context) async {
-    await AuthService().logout();
+    try {
+      await AuthService().logout();
+    } catch (_) {
+      // Si falla el logout remoto o local, igual navegamos al login
+    }
     if (!context.mounted) return;
     Navigator.of(context).pushAndRemoveUntil(
       MaterialPageRoute(builder: (_) => const LoginScreen()),

@@ -39,10 +39,13 @@ class AuthService {
   }
 
   Future<void> logout() async {
-    final refresh = await _storage.read(key: _keyRefreshToken);
-    if (refresh != null) {
-      final token = await _storage.read(key: _keyAccessToken);
-      try {
+    // Intentar blacklist del token en el servidor (máx 4s, no bloqueante)
+    try {
+      final refresh = await _storage.read(key: _keyRefreshToken)
+          .timeout(const Duration(seconds: 3), onTimeout: () => null);
+      if (refresh != null) {
+        final token = await _storage.read(key: _keyAccessToken)
+            .timeout(const Duration(seconds: 2), onTimeout: () => null);
         await http.post(
           ApiConfig.uri('/api/auth/logout/'),
           headers: {
@@ -50,12 +53,15 @@ class AuthService {
             if (token != null) 'Authorization': 'Bearer $token',
           },
           body: jsonEncode({'refresh': refresh}),
-        );
-      } catch (_) {
-        // Si falla la llamada al servidor igual borramos localmente
+        ).timeout(const Duration(seconds: 4));
       }
+    } catch (_) {
+      // Fallo de red o timeout → igual borramos localmente
     }
-    await _storage.deleteAll();
+    // Siempre borrar tokens locales
+    try {
+      await _storage.deleteAll();
+    } catch (_) {}
   }
 
   /// Verifica si hay sesión activa comprobando que el access token
