@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:histolink/shared/theme/app_colors.dart';
 import 'package:histolink/shared/models/user_model.dart';
+import 'package:histolink/shared/widgets/app_drawer.dart';
 import 'package:histolink/GestionDeUsuarios/LoginYAutenticacion/services/auth_service.dart';
 import 'package:histolink/GestionDeUsuarios/LoginYAutenticacion/screens/login_screen.dart';
 import 'package:histolink/GestionDeUsuarios/RegistroYBusquedaDePacientes/screens/registro_y_busqueda_de_pacientes_screen.dart';
@@ -23,6 +24,7 @@ class DashboardScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.fondo,
+      drawer: AppDrawer(user: user, activeLabel: 'Dashboard'),
       appBar: AppBar(
         backgroundColor: AppColors.azulElectrico,
         foregroundColor: Colors.white,

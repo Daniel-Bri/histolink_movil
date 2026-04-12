@@ -57,38 +57,39 @@ class PacienteModel {
   }
 
   factory PacienteModel.fromJson(Map<String, dynamic> json) {
-    final ci = _str(json['ci']) ??
-        _str(json['numero_documento']) ??
-        _str(json['numero_ci']) ??
-        '';
+    final ci = _str(json['ci']) ?? _str(json['numero_documento']) ?? '';
 
+    // El serializer devuelve aliases: nombre→nombres, apellido→apellido_paterno, genero→sexo
     return PacienteModel(
       id: json['id'] is int ? json['id'] as int : int.tryParse('${json['id']}') ?? 0,
       ci: ci,
-      ciComplemento: _str(json['ci_complemento']) ?? _str(json['complemento']),
-      nombres: _str(json['nombres']) ?? '',
-      apellidoPaterno: _str(json['apellido_paterno']) ?? '',
-      apellidoMaterno: _str(json['apellido_materno']),
-      fechaNacimiento: _str(json['fecha_nacimiento']) ?? '',
-      sexo: _str(json['sexo']) ?? '',
-      email: _str(json['email']),
+      ciComplemento: _str(json['ci_complemento']),
+      nombres:        _str(json['nombre'])         ?? _str(json['nombres'])         ?? '',
+      apellidoPaterno:_str(json['apellido'])        ?? _str(json['apellido_paterno']) ?? '',
+      apellidoMaterno:_str(json['apellido_materno']),
+      fechaNacimiento:_str(json['fecha_nacimiento']) ?? '',
+      sexo:           _str(json['genero'])          ?? _str(json['sexo'])            ?? '',
+      email:    _str(json['email']),
       telefono: _str(json['telefono']),
-      direccion: _str(json['direccion']),
+      direccion:_str(json['direccion']),
     );
   }
 
-  /// Cuerpo para POST /api/pacientes/ (ajusta claves si tu serializer Django usa otros nombres).
+  /// Cuerpo para POST — usa los alias que espera el serializer Django.
   Map<String, dynamic> toCreateJson() {
     return {
       'ci': ci,
-      if (ciComplemento != null && ciComplemento!.trim().isNotEmpty) 'ci_complemento': ciComplemento!.trim(),
-      'nombres': nombres.trim(),
-      'apellido_paterno': apellidoPaterno.trim(),
+      if (ciComplemento != null && ciComplemento!.trim().isNotEmpty)
+        'ci_complemento': ciComplemento!.trim(),
+      'nombre':           nombres.trim(),
+      'apellido':         apellidoPaterno.trim(),
+      if (apellidoMaterno != null && apellidoMaterno!.trim().isNotEmpty)
+        'apellido_materno': apellidoMaterno!.trim(),
       'fecha_nacimiento': fechaNacimiento,
-      'sexo': sexo,
-      if (email != null && email!.trim().isNotEmpty) 'email': email!.trim(),
+      'genero':           sexo,
+      if (email    != null && email!.trim().isNotEmpty)    'email':    email!.trim(),
       if (telefono != null && telefono!.trim().isNotEmpty) 'telefono': telefono!.trim(),
-      if (direccion != null && direccion!.trim().isNotEmpty) 'direccion': direccion!.trim(),
+      if (direccion!= null && direccion!.trim().isNotEmpty)'direccion':direccion!.trim(),
     };
   }
 }

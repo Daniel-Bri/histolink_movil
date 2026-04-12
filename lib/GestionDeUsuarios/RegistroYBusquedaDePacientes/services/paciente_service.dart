@@ -16,7 +16,7 @@ class PacienteService {
 
   final ApiService _api;
 
-  static const String _base = '/api/pacientes/';
+  static const String _base = '/api/pacientes/pacientes/';
 
   String _formatErrorBody(String body) {
     try {
@@ -70,7 +70,7 @@ class PacienteService {
   }
 
   Future<PacienteModel> obtener(int id) async {
-    final res = await _api.get('/api/pacientes/$id/');
+    final res = await _api.get('/api/pacientes/pacientes/$id/');
     if (res.statusCode == 200) {
       return PacienteModel.fromJson(jsonDecode(res.body) as Map<String, dynamic>);
     }

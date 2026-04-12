@@ -24,6 +24,12 @@ class _PacienteListScreenState extends State<PacienteListScreen> {
   bool _buscoAlgunaVez = false;
 
   @override
+  void initState() {
+    super.initState();
+    _cargar();
+  }
+
+  @override
   void dispose() {
     _searchCtrl.dispose();
     super.dispose();
@@ -87,6 +93,7 @@ class _PacienteListScreenState extends State<PacienteListScreen> {
           }
         },
         backgroundColor: AppColors.azulPuro,
+        foregroundColor: Colors.white,
         icon: const Icon(Icons.person_add_rounded),
         label: const Text('Nuevo', style: TextStyle(fontWeight: FontWeight.w600)),
       ),
