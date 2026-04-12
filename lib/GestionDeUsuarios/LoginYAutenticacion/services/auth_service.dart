@@ -20,22 +20,24 @@ class AuthService {
     );
 
     if (response.statusCode == 200) {
-      final data = jsonDecode(response.body);
-      await _storage.write(key: _keyAccessToken,  value: data['access']);
-      await _storage.write(key: _keyRefreshToken, value: data['refresh']);
-      final user = UserModel.fromJson(data['user']);
+      final data = jsonDecode(response.body) as Map<String, dynamic>;
+      await _storage.write(key: _keyAccessToken,  value: data['access']  as String?);
+      await _storage.write(key: _keyRefreshToken, value: data['refresh'] as String?);
+      final user = UserModel.fromJson(data['user'] as Map<String, dynamic>);
       await _storage.write(key: _keyUsername, value: user.username);
       return user;
-    } else {
-      final data = jsonDecode(response.body);
-      final message = data['detail'] ?? data['non_field_errors']?[0] ?? 'Credenciales incorrectas';
-      throw Exception(message);
     }
+
+    final data = jsonDecode(response.body) as Map<String, dynamic>;
+    final message = (data['detail']
+        ?? (data['non_field_errors'] as List?)?.first
+        ?? 'Credenciales incorrectas')
+        .toString();
+    throw Exception(message);
   }
 
   Future<void> logout() async {
     final refresh = await _storage.read(key: _keyRefreshToken);
-
     if (refresh != null) {
       final token = await _storage.read(key: _keyAccessToken);
       try {
@@ -43,7 +45,7 @@ class AuthService {
           ApiConfig.uri('/api/auth/logout/'),
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': 'Bearer $token',
+            if (token != null) 'Authorization': 'Bearer $token',
           },
           body: jsonEncode({'refresh': refresh}),
         );
@@ -51,14 +53,11 @@ class AuthService {
         // Si falla la llamada al servidor igual borramos localmente
       }
     }
-
-    await _storage.delete(key: _keyAccessToken);
-    await _storage.delete(key: _keyRefreshToken);
-    await _storage.delete(key: _keyUsername);
+    await _storage.deleteAll();
   }
 
   /// Verifica si hay sesión activa comprobando que el access token
-  /// existe Y no ha expirado (decodifica el claim `exp` del JWT).
+  /// existe y no ha expirado (decodifica el claim `exp` del JWT).
   Future<bool> isLoggedIn() async {
     final token = await _storage.read(key: _keyAccessToken);
     if (token == null || token.isEmpty) return false;
@@ -67,37 +66,28 @@ class AuthService {
       final parts = token.split('.');
       if (parts.length != 3) return false;
 
-      // base64url → base64 estándar (reemplazar chars y agregar padding)
       var payload = parts[1].replaceAll('-', '+').replaceAll('_', '/');
       switch (payload.length % 4) {
-        case 2:
-          payload += '==';
-          break;
-        case 3:
-          payload += '=';
-          break;
+        case 2: payload += '=='; break;
+        case 3: payload += '=';  break;
       }
 
-      final decoded = jsonDecode(utf8.decode(base64.decode(payload)));
+      final decoded = jsonDecode(utf8.decode(base64.decode(payload))) as Map<String, dynamic>;
       final exp = decoded['exp'] as int?;
       if (exp == null) return false;
 
-      // exp es Unix timestamp en segundos
       return DateTime.now().millisecondsSinceEpoch < exp * 1000;
     } catch (_) {
       return false;
     }
   }
 
-  Future<String?> getToken() async {
-    return _storage.read(key: _keyAccessToken);
-  }
+  Future<String?> getToken() => _storage.read(key: _keyAccessToken);
 
-  Future<String> getCachedUsername() async {
-    return await _storage.read(key: _keyUsername) ?? '';
-  }
+  Future<String> getCachedUsername() async =>
+      await _storage.read(key: _keyUsername) ?? '';
 
-  /// Renueva el access token con el refresh guardado. Devuelve false si no hay refresh o falla la petición.
+  /// Renueva el access token con el refresh guardado.
   Future<bool> tryRefreshAccessToken() async {
     final refresh = await _storage.read(key: _keyRefreshToken);
     if (refresh == null || refresh.isEmpty) return false;

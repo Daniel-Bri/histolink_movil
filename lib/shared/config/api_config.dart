@@ -15,13 +15,18 @@ class ApiConfig {
 
   static String get baseUrl {
     if (_customHost.isNotEmpty) {
-      // Si ya incluye esquema (http/https) lo usamos directo
       if (_customHost.startsWith('http')) return _customHost;
-      // Si es solo host:puerto asumimos http (desarrollo local)
       return 'http://$_customHost';
     }
     return _railwayUrl;
   }
 
-  static Uri uri(String path) => Uri.parse('$baseUrl$path');
+  /// Ruta para renovar el access token con el refresh.
+  static const String tokenRefreshPath = '/api/auth/token/refresh/';
+
+  static Uri uri(String path, [Map<String, String>? queryParameters]) {
+    final base = Uri.parse('$baseUrl$path');
+    if (queryParameters == null || queryParameters.isEmpty) return base;
+    return base.replace(queryParameters: queryParameters);
+  }
 }
