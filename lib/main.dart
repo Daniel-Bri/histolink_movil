@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:histolink/app_navigator.dart';
 import 'package:histolink/shared/theme/app_colors.dart';
 import 'package:histolink/shared/screens/dashboard_screen.dart';
 import 'package:histolink/shared/models/user_model.dart';
@@ -15,6 +16,7 @@ class HistolinkApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      navigatorKey: appNavigatorKey,
       title: 'Histolink',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(

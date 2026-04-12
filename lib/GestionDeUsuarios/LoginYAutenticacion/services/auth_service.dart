@@ -6,7 +6,7 @@ import 'package:histolink/shared/config/api_config.dart';
 
 class AuthService {
   // Android Keystore (AES-256) en Android · Keychain en iOS
-  static const _storage = FlutterSecureStorage();
+  static final _storage = FlutterSecureStorage();
 
   static const String _keyAccessToken  = 'access_token';
   static const String _keyRefreshToken = 'refresh_token';
@@ -95,5 +95,29 @@ class AuthService {
 
   Future<String> getCachedUsername() async {
     return await _storage.read(key: _keyUsername) ?? '';
+  }
+
+  /// Renueva el access token con el refresh guardado. Devuelve false si no hay refresh o falla la petición.
+  Future<bool> tryRefreshAccessToken() async {
+    final refresh = await _storage.read(key: _keyRefreshToken);
+    if (refresh == null || refresh.isEmpty) return false;
+
+    final response = await http.post(
+      ApiConfig.uri(ApiConfig.tokenRefreshPath),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({'refresh': refresh}),
+    );
+
+    if (response.statusCode != 200) return false;
+
+    try {
+      final data = jsonDecode(response.body) as Map<String, dynamic>;
+      final access = data['access'] as String?;
+      if (access == null || access.isEmpty) return false;
+      await _storage.write(key: _keyAccessToken, value: access);
+      return true;
+    } catch (_) {
+      return false;
+    }
   }
 }
