@@ -45,9 +45,23 @@ class DashboardScreen extends StatelessWidget {
               child: const Icon(Icons.local_hospital, color: Colors.white, size: 18),
             ),
             const SizedBox(width: 10),
-            const Text(
-              'Histolink',
-              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, letterSpacing: 0.3),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    user.tenantNombre ?? 'Histolink',
+                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15, letterSpacing: 0.2),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  if (user.tenantNombre != null)
+                    const Text(
+                      'HISTOLINK — SISTEMA CLÍNICO',
+                      style: TextStyle(fontSize: 9, letterSpacing: 0.5, color: Colors.white70),
+                    ),
+                ],
+              ),
             ),
           ],
         ),
@@ -103,21 +117,45 @@ class DashboardScreen extends StatelessWidget {
                           ),
                         ),
                         const SizedBox(height: 10),
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
-                          decoration: BoxDecoration(
-                            color: AppColors.mentaVibrante,
-                            borderRadius: BorderRadius.circular(20),
-                          ),
-                          child: Text(
-                            user.role,
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 12,
-                              fontWeight: FontWeight.w600,
+                        Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+                              decoration: BoxDecoration(
+                                color: AppColors.mentaVibrante,
+                                borderRadius: BorderRadius.circular(20),
+                              ),
+                              child: Text(
+                                user.role,
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
                             ),
-                          ),
+                          ],
                         ),
+                        if (user.tenantNombre != null) ...[
+                          const SizedBox(height: 10),
+                          Row(
+                            children: [
+                              const Icon(Icons.business_outlined, color: Colors.white60, size: 13),
+                              const SizedBox(width: 5),
+                              Expanded(
+                                child: Text(
+                                  user.tenantNombre!,
+                                  style: const TextStyle(
+                                    color: Colors.white70,
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
                       ],
                     ),
                   ),

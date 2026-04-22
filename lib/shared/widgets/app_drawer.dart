@@ -138,18 +138,21 @@ class AppDrawer extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(width: 10),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        'HistoLink',
-                        style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 15),
-                      ),
-                      Text(
-                        'SISTEMA CLÍNICO',
-                        style: TextStyle(color: _textMid, fontSize: 10, letterSpacing: 0.6),
-                      ),
-                    ],
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'HistoLink',
+                          style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 15),
+                        ),
+                        Text(
+                          user.tenantNombre?.toUpperCase() ?? 'SISTEMA CLÍNICO',
+                          style: TextStyle(color: _textMid, fontSize: 10, letterSpacing: 0.5),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ],
+                    ),
                   ),
                 ],
               ),
