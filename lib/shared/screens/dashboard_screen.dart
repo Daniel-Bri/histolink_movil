@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:histolink/shared/theme/app_colors.dart';
 import 'package:histolink/shared/models/user_model.dart';
+import 'package:histolink/shared/widgets/app_drawer.dart';
 import 'package:histolink/GestionDeUsuarios/LoginYAutenticacion/services/auth_service.dart';
 import 'package:histolink/GestionDeUsuarios/LoginYAutenticacion/screens/login_screen.dart';
-import 'package:histolink/GestionDeUsuarios/VisualizacionDelExpediente/screens/visualizacion_del_expediente_screen.dart';
+import 'package:histolink/GestionDeUsuarios/RegistroYBusquedaDePacientes/screens/registro_y_busqueda_de_pacientes_screen.dart';
 
 class DashboardScreen extends StatelessWidget {
   final UserModel user;
@@ -11,7 +12,11 @@ class DashboardScreen extends StatelessWidget {
   const DashboardScreen({super.key, required this.user});
 
   Future<void> _logout(BuildContext context) async {
-    await AuthService().logout();
+    try {
+      await AuthService().logout();
+    } catch (_) {
+      // Si falla el logout remoto o local, igual navegamos al login
+    }
     if (!context.mounted) return;
     Navigator.pushReplacement(
       context,
@@ -23,6 +28,7 @@ class DashboardScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.fondo,
+      drawer: AppDrawer(user: user, activeLabel: 'Dashboard'),
       appBar: AppBar(
         backgroundColor: AppColors.azulElectrico,
         foregroundColor: Colors.white,
@@ -39,9 +45,23 @@ class DashboardScreen extends StatelessWidget {
               child: const Icon(Icons.local_hospital, color: Colors.white, size: 18),
             ),
             const SizedBox(width: 10),
-            const Text(
-              'Histolink',
-              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, letterSpacing: 0.3),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    user.tenantNombre ?? 'Histolink',
+                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15, letterSpacing: 0.2),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  if (user.tenantNombre != null)
+                    const Text(
+                      'HISTOLINK — SISTEMA CLÍNICO',
+                      style: TextStyle(fontSize: 9, letterSpacing: 0.5, color: Colors.white70),
+                    ),
+                ],
+              ),
             ),
           ],
         ),
@@ -97,21 +117,45 @@ class DashboardScreen extends StatelessWidget {
                           ),
                         ),
                         const SizedBox(height: 10),
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
-                          decoration: BoxDecoration(
-                            color: AppColors.mentaVibrante,
-                            borderRadius: BorderRadius.circular(20),
-                          ),
-                          child: Text(
-                            user.role,
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 12,
-                              fontWeight: FontWeight.w600,
+                        Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+                              decoration: BoxDecoration(
+                                color: AppColors.mentaVibrante,
+                                borderRadius: BorderRadius.circular(20),
+                              ),
+                              child: Text(
+                                user.role,
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
                             ),
-                          ),
+                          ],
                         ),
+                        if (user.tenantNombre != null) ...[
+                          const SizedBox(height: 10),
+                          Row(
+                            children: [
+                              const Icon(Icons.business_outlined, color: Colors.white60, size: 13),
+                              const SizedBox(width: 5),
+                              Expanded(
+                                child: Text(
+                                  user.tenantNombre!,
+                                  style: const TextStyle(
+                                    color: Colors.white70,
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
                       ],
                     ),
                   ),
@@ -167,10 +211,10 @@ class DashboardScreen extends StatelessWidget {
                   iconColor: AppColors.azulPuro,
                   bgColor: AppColors.azulCielo,
                   onTap: () {
-                    Navigator.push(
+                    Navigator.push<void>(
                       context,
-                      MaterialPageRoute(
-                        builder: (_) => const VisualizacionDelExpedienteScreen(),
+                      MaterialPageRoute<void>(
+                        builder: (_) => const RegistroYBusquedaDePacientesScreen(),
                       ),
                     );
                   },

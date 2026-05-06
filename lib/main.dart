@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:histolink/app_navigator.dart';
 import 'package:histolink/shared/theme/app_colors.dart';
 import 'package:histolink/shared/screens/dashboard_screen.dart';
 import 'package:histolink/shared/models/user_model.dart';
@@ -6,6 +7,7 @@ import 'package:histolink/GestionDeUsuarios/LoginYAutenticacion/screens/login_sc
 import 'package:histolink/GestionDeUsuarios/LoginYAutenticacion/services/auth_service.dart';
 
 void main() {
+  WidgetsFlutterBinding.ensureInitialized();
   runApp(const HistolinkApp());
 }
 
@@ -15,6 +17,7 @@ class HistolinkApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      navigatorKey: appNavigatorKey,
       title: 'Histolink',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
@@ -69,15 +72,41 @@ class _SplashRouterState extends State<_SplashRouter> {
   }
 
   Future<void> _checkSession() async {
-    final loggedIn = await AuthService().isLoggedIn();
-    if (!mounted) return;
-    if (loggedIn) {
-      final username = await AuthService().getCachedUsername();
-      final user = UserModel(id: 0, username: username, email: '', firstName: '', lastName: '', groups: []);
-      Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => DashboardScreen(user: user)));
-    } else {
-      Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const LoginScreen()));
+    try {
+      final auth = AuthService();
+
+      // Timeout de 6s: si el storage tarda más, vamos directo al login
+      final loggedIn = await auth.isLoggedIn().timeout(
+        const Duration(seconds: 6),
+        onTimeout: () => false,
+      );
+
+      if (!mounted) return;
+
+      if (loggedIn) {
+        final username = await auth.getCachedUsername();
+        final user = UserModel(
+          id: 0, username: username, email: '',
+          firstName: '', lastName: '', groups: [],
+        );
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => DashboardScreen(user: user)),
+        );
+      } else {
+        _goLogin();
+      }
+    } catch (_) {
+      // Cualquier error → pantalla de login
+      if (mounted) _goLogin();
     }
+  }
+
+  void _goLogin() {
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(builder: (_) => const LoginScreen()),
+    );
   }
 
   @override
