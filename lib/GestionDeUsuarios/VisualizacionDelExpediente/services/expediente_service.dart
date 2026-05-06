@@ -1,15 +1,10 @@
 import 'dart:convert';
-import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:histolink/shared/config/api_config.dart';
 import 'package:histolink/GestionDeUsuarios/LoginYAutenticacion/services/auth_service.dart';
 import 'package:histolink/GestionDeUsuarios/VisualizacionDelExpediente/models/expediente_resumido_model.dart';
 
 class ExpedienteService {
-  static String get _host => kIsWeb ? 'localhost:8000' : '192.168.0.108:8000';
-
-  static Uri _uri(String path) => Uri.http(_host, path);
-
   final AuthService _authService = AuthService();
 
   Future<ExpedienteResumido> obtenerExpedienteResumido(int pacienteId) async {

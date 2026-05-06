@@ -1,20 +1,10 @@
 import 'dart:convert';
-import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:histolink/shared/models/user_model.dart';
 import 'package:histolink/shared/config/api_config.dart';
 
 class AuthService {
-  // Se selecciona automáticamente según la plataforma:
-  //   Web/Chrome        → localhost:8000
-  //   Emulador Android  → 10.0.2.2:8000
-  //   Dispositivo físico → 192.168.0.108:8000
-  static String get _host =>
-      kIsWeb ? 'localhost:8000' : '192.168.0.108:8000';
-
-  static Uri _uri(String path) => Uri.http(_host, path);
-
   // Android Keystore (AES-256) en Android · Keychain en iOS
   static const _storage = FlutterSecureStorage();
 
