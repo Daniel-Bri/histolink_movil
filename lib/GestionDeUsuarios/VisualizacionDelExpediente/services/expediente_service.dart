@@ -6,7 +6,7 @@ import 'package:histolink/GestionDeUsuarios/LoginYAutenticacion/services/auth_se
 import 'package:histolink/GestionDeUsuarios/VisualizacionDelExpediente/models/expediente_resumido_model.dart';
 
 class ExpedienteService {
-  static String get _host => kIsWeb ? 'localhost:8000' : '10.0.2.2:8000';
+  static String get _host => kIsWeb ? 'localhost:8000' : '192.168.0.108:8000';
 
   static Uri _uri(String path) => Uri.http(_host, path);
 
@@ -35,4 +35,3 @@ class ExpedienteService {
     throw Exception(message);
   }
 }
-

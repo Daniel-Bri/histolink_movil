@@ -8,9 +8,9 @@ class AuthService {
   // Se selecciona automáticamente según la plataforma:
   //   Web/Chrome        → localhost:8000
   //   Emulador Android  → 10.0.2.2:8000
-  //   Dispositivo físico → cambia a la IP local de tu PC
+  //   Dispositivo físico → 192.168.0.108:8000
   static String get _host =>
-      kIsWeb ? 'localhost:8000' : '10.0.2.2:8000';
+      kIsWeb ? 'localhost:8000' : '192.168.0.108:8000';
 
   static Uri _uri(String path) => Uri.http(_host, path);
 
