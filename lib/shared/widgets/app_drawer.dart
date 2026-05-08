@@ -3,6 +3,7 @@ import 'package:histolink/shared/models/user_model.dart';
 import 'package:histolink/GestionDeUsuarios/LoginYAutenticacion/services/auth_service.dart';
 import 'package:histolink/GestionDeUsuarios/LoginYAutenticacion/screens/login_screen.dart';
 import 'package:histolink/GestionDeUsuarios/RegistroYBusquedaDePacientes/screens/registro_y_busqueda_de_pacientes_screen.dart';
+import 'package:histolink/AtencionClinica/SolicitudDeEstudios/screens/solicitud_de_estudios_screen.dart';
 
 // ── Colores del sidebar (mismos que web) ─────────────────────────────────────
 const _bgSidebar    = Color(0xFF122268);
@@ -69,9 +70,15 @@ final _sections = <_NavSection>[
     ),
   ]),
   _NavSection(title: 'Atención Clínica', items: [
-    _NavItem(label: 'Historial Clínico', icon: Icons.assignment_outlined,   soon: true),
-    _NavItem(label: 'Documentos',        icon: Icons.folder_outlined,        soon: true),
+    _NavItem(label: 'Historial Clínico', icon: Icons.assignment_outlined,    soon: true),
+    _NavItem(label: 'Documentos',        icon: Icons.folder_outlined,         soon: true),
     _NavItem(label: 'Agenda',            icon: Icons.calendar_month_outlined, soon: true),
+    _NavItem(
+      label: 'Solicitud de Estudios',
+      icon: Icons.science_outlined,
+      roles: ['Médico', 'Laboratorio'],
+      screenBuilder: () => const SolicitudDeEstudiosScreen(),
+    ),
   ]),
   _NavSection(title: 'IA + Blockchain', items: [
     _NavItem(label: 'Clasificación IA', icon: Icons.memory_outlined,       soon: true),
