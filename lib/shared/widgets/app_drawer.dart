@@ -3,7 +3,8 @@ import 'package:histolink/shared/models/user_model.dart';
 import 'package:histolink/GestionDeUsuarios/LoginYAutenticacion/services/auth_service.dart';
 import 'package:histolink/GestionDeUsuarios/LoginYAutenticacion/screens/login_screen.dart';
 import 'package:histolink/GestionDeUsuarios/RegistroYBusquedaDePacientes/screens/registro_y_busqueda_de_pacientes_screen.dart';
-import 'package:histolink/AtencionClinica/EmisionDeRecetaMedica/screens/emision_de_receta_medica_screen.dart';
+import 'package:histolink/AtencionClinica/SolicitudDeEstudios/screens/solicitud_de_estudios_screen.dart';
+import 'package:histolink/AtencionClinica/RegistroDeTriaje/screens/registro_de_triaje_screen.dart';
 
 // ── Colores del sidebar (mismos que web) ─────────────────────────────────────
 const _bgSidebar = Color(0xFF122268);
@@ -56,77 +57,45 @@ class _NavSection {
 }
 
 final _sections = <_NavSection>[
-  _NavSection(
-    title: 'Gestión de Usuarios',
-    items: [
-      _NavItem(
-        label: 'Pacientes',
-        icon: Icons.people_outline_rounded,
-        screenBuilder: () => const RegistroYBusquedaDePacientesScreen(),
-      ),
-      _NavItem(
-        label: 'Personal de Salud',
-        icon: Icons.badge_outlined,
-        soon: true,
-        roles: ['Administrativo', 'Director'],
-      ),
-    ],
-  ),
-  _NavSection(
-    title: 'Atención Clínica',
-    items: [
-      _NavItem(
-        label: 'Recetas',
-        icon: Icons.receipt_long_outlined,
-        roles: ['Médico', 'Farmacia', 'Administrativo', 'Director'],
-        screenBuilder: () => const EmisionDeRecetaMedicaScreen(),
-      ),
-      _NavItem(
-        label: 'Historial Clínico',
-        icon: Icons.assignment_outlined,
-        soon: true,
-      ),
-      _NavItem(label: 'Documentos', icon: Icons.folder_outlined, soon: true),
-      _NavItem(
-        label: 'Agenda',
-        icon: Icons.calendar_month_outlined,
-        soon: true,
-      ),
-    ],
-  ),
-  _NavSection(
-    title: 'IA + Blockchain',
-    items: [
-      _NavItem(
-        label: 'Clasificación IA',
-        icon: Icons.memory_outlined,
-        soon: true,
-      ),
-      _NavItem(
-        label: 'Riesgo Clínico',
-        icon: Icons.monitor_heart_outlined,
-        soon: true,
-      ),
-      _NavItem(label: 'Blockchain', icon: Icons.link_rounded, soon: true),
-    ],
-  ),
-  _NavSection(
-    title: 'Seguridad y Admin',
-    items: [
-      _NavItem(
-        label: 'Auditoría',
-        icon: Icons.shield_outlined,
-        soon: true,
-        roles: ['Auditor', 'Director'],
-      ),
-      _NavItem(
-        label: 'Administración',
-        icon: Icons.settings_outlined,
-        soon: true,
-        roles: ['Administrativo', 'Director'],
-      ),
-    ],
-  ),
+  _NavSection(title: 'Gestión de Usuarios', items: [
+    _NavItem(
+      label: 'Pacientes',
+      icon: Icons.people_outline_rounded,
+      screenBuilder: () => const RegistroYBusquedaDePacientesScreen(),
+    ),
+    _NavItem(
+      label: 'Personal de Salud',
+      icon: Icons.badge_outlined,
+      soon: true,
+      roles: ['Administrativo', 'Director'],
+    ),
+  ]),
+  _NavSection(title: 'Atención Clínica', items: [
+    _NavItem(label: 'Historial Clínico', icon: Icons.assignment_outlined,    soon: true),
+    _NavItem(label: 'Documentos',        icon: Icons.folder_outlined,         soon: true),
+    _NavItem(label: 'Agenda',            icon: Icons.calendar_month_outlined, soon: true),
+    _NavItem(
+      label: 'Triaje',
+      icon: Icons.monitor_heart_outlined,
+      roles: ['Médico', 'Enfermera'],
+      screenBuilder: () => const RegistroDeTriajeScreen(),
+    ),
+    _NavItem(
+      label: 'Solicitud de Estudios',
+      icon: Icons.science_outlined,
+      roles: ['Médico', 'Laboratorio'],
+      screenBuilder: () => const SolicitudDeEstudiosScreen(),
+    ),
+  ]),
+  _NavSection(title: 'IA + Blockchain', items: [
+    _NavItem(label: 'Clasificación IA', icon: Icons.memory_outlined,       soon: true),
+    _NavItem(label: 'Riesgo Clínico',   icon: Icons.monitor_heart_outlined, soon: true),
+    _NavItem(label: 'Blockchain',       icon: Icons.link_rounded,           soon: true),
+  ]),
+  _NavSection(title: 'Seguridad y Admin', items: [
+    _NavItem(label: 'Auditoría',      icon: Icons.shield_outlined,   soon: true, roles: ['Auditor', 'Director']),
+    _NavItem(label: 'Administración', icon: Icons.settings_outlined, soon: true, roles: ['Administrativo', 'Director']),
+  ]),
 ];
 
 // ── Widget principal ──────────────────────────────────────────────────────────
@@ -378,12 +347,13 @@ class _NavTileState extends State<_NavTile> {
     final soon = widget.item.soon;
 
     Color textColor;
-    if (active)
+    if (active) {
       textColor = Colors.white;
-    else if (soon)
+    } else if (soon) {
       textColor = _textLow;
-    else
+    } else {
       textColor = _textHigh;
+    }
 
     return GestureDetector(
       onTapDown: (_) => setState(() => _pressed = true),
