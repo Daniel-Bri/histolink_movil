@@ -28,7 +28,9 @@ class ExpedienteService {
     }
 
     final data = jsonDecode(response.body) as Map<String, dynamic>;
-    final message = (data['error'] ?? data['detail'] ?? 'No se pudo cargar el expediente.').toString();
+    final message =
+        (data['error'] ?? data['detail'] ?? 'No se pudo cargar el expediente.')
+            .toString();
     throw Exception(message);
   }
 }

@@ -1,14 +1,17 @@
+import 'package:flutter/foundation.dart' show kIsWeb, kReleaseMode;
+
 /// Configuración centralizada de la URL del backend.
 ///
 /// Prioridad:
 ///   1. --dart-define=API_HOST=https://mi-backend.railway.app  (build personalizado)
-///   2. URL de Railway en producción (defecto para APK release)
-///   3. 10.0.2.2:8000 solo si se fuerza con --dart-define=API_HOST=10.0.2.2:8000
+///   2. En desarrollo móvil: backend local (IP LAN)
+///   3. En release: URL de Railway
 class ApiConfig {
   ApiConfig._();
 
   // URL de producción en Railway
   static const String _railwayUrl = 'https://histolinkbackend-production.up.railway.app';
+  static const String _localLanHost = '192.168.0.108:8000';
 
   // Override opcional vía --dart-define=API_HOST=...
   static const String _customHost = String.fromEnvironment('API_HOST', defaultValue: '');
@@ -17,6 +20,9 @@ class ApiConfig {
     if (_customHost.isNotEmpty) {
       if (_customHost.startsWith('http')) return _customHost;
       return 'http://$_customHost';
+    }
+    if (!kIsWeb && !kReleaseMode) {
+      return 'http://$_localLanHost';
     }
     return _railwayUrl;
   }
