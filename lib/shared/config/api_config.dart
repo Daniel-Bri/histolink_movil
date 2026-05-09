@@ -1,18 +1,21 @@
-import 'package:flutter/foundation.dart' show kIsWeb, kReleaseMode;
+import 'package:flutter/foundation.dart' show kIsWeb;
 
 /// Configuración centralizada de la URL del backend.
 ///
-/// En debug apunta siempre al backend local:
-///   - Emulador Android : 10.0.2.2:8000
-///   - Dispositivo físico: cambiar _localHost a la IP LAN del PC (ej. 192.168.0.108:8000)
+/// - Web (navegador)      : localhost:8000
+/// - Emulador Android     : 10.0.2.2:8000
+/// - Dispositivo físico   : cambiar _mobileHost a la IP LAN del PC
 ///
 /// Override manual: --dart-define=API_HOST=http://ip:8000
 class ApiConfig {
   ApiConfig._();
 
-  // Para emulador Android usa 10.0.2.2 (alias del localhost del PC).
-  // Para dispositivo físico cambia a la IP LAN: '192.168.x.x:8000'
-  static const String _localHost = '10.0.2.2:8000';
+  // Web: el navegador accede al backend como localhost
+  static const String _webHost = 'localhost:8000';
+
+  // Emulador Android: 10.0.2.2 es el alias del localhost del PC.
+  // Para dispositivo físico cambiar a la IP LAN: '192.168.x.x:8000'
+  static const String _mobileHost = '10.0.2.2:8000';
 
   // Override opcional vía --dart-define=API_HOST=...
   static const String _customHost = String.fromEnvironment('API_HOST', defaultValue: '');
@@ -22,7 +25,7 @@ class ApiConfig {
       if (_customHost.startsWith('http')) return _customHost;
       return 'http://$_customHost';
     }
-    return 'http://$_localHost';
+    return kIsWeb ? 'http://$_webHost' : 'http://$_mobileHost';
   }
 
   /// Ruta para renovar el access token con el refresh.

@@ -86,6 +86,7 @@ class OrdenEstudioModel {
   final int id;
   final String correlativoOrden;
   final String tipo;
+  final String _tipoLabelFromApi;
   final String descripcion;
   final String indicacionClinica;
   final bool urgente;
@@ -101,6 +102,7 @@ class OrdenEstudioModel {
     required this.id,
     required this.correlativoOrden,
     required this.tipo,
+    required String tipoLabelFromApi,
     required this.descripcion,
     required this.indicacionClinica,
     required this.urgente,
@@ -111,18 +113,22 @@ class OrdenEstudioModel {
     this.consultaId,
     this.pacienteNombre,
     this.resultado,
-  });
+  }) : _tipoLabelFromApi = tipoLabelFromApi;
 
   bool get puedeIniciar => estado == 'SOLICITADA';
   bool get puedeSubirResultado => estado == 'EN_PROCESO';
   bool get estaCompletada => estado == 'COMPLETADA';
   bool get estaAnulada => estado == 'ANULADA';
 
-  String get tipoLabel => _tipoLabels[tipo] ?? tipo;
+  // Usa el label del backend si está disponible; fallback al mapa local.
+  String get tipoLabel {
+    if (_tipoLabelFromApi.isNotEmpty) return _tipoLabelFromApi;
+    return _tipoLabels[tipo] ?? tipo;
+  }
 
   static const _tipoLabels = <String, String>{
     'LAB': 'Laboratorio',
-    'RX': 'Rayos X',
+    'RX': 'Radiografía',
     'ECO': 'Ecografía',
     'TC': 'TAC/TC',
     'RMN': 'Resonancia',
@@ -132,15 +138,17 @@ class OrdenEstudioModel {
   };
 
   factory OrdenEstudioModel.fromJson(Map<String, dynamic> j) {
+    // Médico: puede venir como string (nombre directo), Map o campo separado
     String? medicoNombre;
-    final medico = j['medico_solicitante'];
-    if (medico is Map<String, dynamic>) {
-      medicoNombre = (medico['nombre_completo'] as String?) ??
-          '${medico['first_name'] ?? ''} ${medico['last_name'] ?? ''}'.trim();
-    } else if (medico is String) {
-      medicoNombre = medico;
+    final medicoField = j['medico_solicitante_nombre'] ?? j['medico_solicitante'];
+    if (medicoField is String && medicoField.isNotEmpty) {
+      medicoNombre = medicoField;
+    } else if (medicoField is Map<String, dynamic>) {
+      medicoNombre = (medicoField['nombre_completo'] as String?) ??
+          '${medicoField['first_name'] ?? ''} ${medicoField['last_name'] ?? ''}'.trim();
     }
 
+    // Paciente
     String? pacienteNombre;
     final pacienteField = j['paciente_nombre'] ?? j['paciente'];
     if (pacienteField is String) {
@@ -150,24 +158,29 @@ class OrdenEstudioModel {
           '${pacienteField['primer_nombre'] ?? ''} ${pacienteField['primer_apellido'] ?? ''}'.trim();
     }
 
+    // Resultado anidado
     ResultadoEstudioModel? resultado;
     final raw = j['resultado'];
     if (raw is Map<String, dynamic>) {
       resultado = ResultadoEstudioModel.fromJson(raw);
     }
 
-    int? consultaId;
-    final consulta = j['consulta'];
-    if (consulta is int) {
-      consultaId = consulta;
-    } else if (consulta is Map<String, dynamic>) {
-      consultaId = consulta['id'] as int?;
+    // Consulta ID
+    int? consultaId = j['consulta_id'] as int?;
+    if (consultaId == null) {
+      final consulta = j['consulta'];
+      if (consulta is int) {
+        consultaId = consulta;
+      } else if (consulta is Map<String, dynamic>) {
+        consultaId = consulta['id'] as int?;
+      }
     }
 
     return OrdenEstudioModel(
       id: j['id'] as int,
       correlativoOrden: (j['correlativo_orden'] as String?) ?? '#${j['id']}',
       tipo: (j['tipo'] as String?) ?? 'OTRO',
+      tipoLabelFromApi: (j['tipo_label'] as String?) ?? '',
       descripcion: (j['descripcion'] as String?) ?? '',
       indicacionClinica: (j['indicacion_clinica'] as String?) ?? '',
       urgente: (j['urgente'] as bool?) ?? false,
