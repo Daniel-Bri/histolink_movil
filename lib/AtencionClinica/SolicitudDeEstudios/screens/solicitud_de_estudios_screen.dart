@@ -664,9 +664,12 @@ class _ColaOrdenesViewState extends State<_ColaOrdenesView>
       _error = null;
     });
     try {
-      final ordenes = widget.isLaboratorio
-          ? await widget.service.getColaLaboratorio()
-          : await widget.service.getOrdenes();
+      // Intenta primero el endpoint general; si falla o devuelve vacío
+      // y es Laboratorio, usa cola-laboratorio como fallback.
+      List<OrdenEstudioModel> ordenes = await widget.service.getOrdenes();
+      if (ordenes.isEmpty && widget.isLaboratorio) {
+        ordenes = await widget.service.getColaLaboratorio();
+      }
       setState(() {
         _ordenes = ordenes;
         _loading = false;

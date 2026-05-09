@@ -2,16 +2,17 @@ import 'package:flutter/foundation.dart' show kIsWeb, kReleaseMode;
 
 /// Configuración centralizada de la URL del backend.
 ///
-/// Prioridad:
-///   1. --dart-define=API_HOST=https://mi-backend.railway.app  (build personalizado)
-///   2. En desarrollo móvil: backend local (IP LAN)
-///   3. En release: URL de Railway
+/// En debug apunta siempre al backend local:
+///   - Emulador Android : 10.0.2.2:8000
+///   - Dispositivo físico: cambiar _localHost a la IP LAN del PC (ej. 192.168.0.108:8000)
+///
+/// Override manual: --dart-define=API_HOST=http://ip:8000
 class ApiConfig {
   ApiConfig._();
 
-  // URL de producción en Railway
-  static const String _railwayUrl = 'https://histolinkbackend-production.up.railway.app';
-  static const String _localLanHost = '192.168.0.108:8000';
+  // Para emulador Android usa 10.0.2.2 (alias del localhost del PC).
+  // Para dispositivo físico cambia a la IP LAN: '192.168.x.x:8000'
+  static const String _localHost = '10.0.2.2:8000';
 
   // Override opcional vía --dart-define=API_HOST=...
   static const String _customHost = String.fromEnvironment('API_HOST', defaultValue: '');
@@ -21,10 +22,7 @@ class ApiConfig {
       if (_customHost.startsWith('http')) return _customHost;
       return 'http://$_customHost';
     }
-    if (!kIsWeb && !kReleaseMode) {
-      return 'http://$_localLanHost';
-    }
-    return _railwayUrl;
+    return 'http://$_localHost';
   }
 
   /// Ruta para renovar el access token con el refresh.

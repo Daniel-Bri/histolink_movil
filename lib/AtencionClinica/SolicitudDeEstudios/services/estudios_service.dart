@@ -80,6 +80,8 @@ class EstudiosService {
       '/api/ordenes-estudio/',
       queryParameters: params.isEmpty ? null : params,
     );
+    // 403 significa que el rol no tiene acceso al listado general → lista vacía
+    if (resp.statusCode == 403) return [];
     if (resp.statusCode != 200) {
       throw Exception('Error al cargar órdenes: ${resp.statusCode}');
     }
