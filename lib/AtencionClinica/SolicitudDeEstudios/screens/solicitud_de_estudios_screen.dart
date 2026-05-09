@@ -344,7 +344,7 @@ class _NuevaOrdenViewState extends State<_NuevaOrdenView>
                         return ListTile(
                           dense: true,
                           selected: sel,
-                          selectedTileColor: _kAccent.withOpacity(0.1),
+                          selectedTileColor: _kAccent.withValues(alpha: 0.1),
                           leading: CircleAvatar(
                             radius: 14,
                             backgroundColor:
@@ -397,7 +397,7 @@ class _NuevaOrdenViewState extends State<_NuevaOrdenView>
                       vertical: 6,
                     ),
                     decoration: BoxDecoration(
-                      color: _kAccent.withOpacity(0.08),
+                      color: _kAccent.withValues(alpha: 0.08),
                       borderRadius: BorderRadius.circular(6),
                     ),
                     child: Row(
@@ -850,7 +850,7 @@ class _OrdenCard extends StatelessWidget {
           ),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.05),
+              color: Colors.black.withValues(alpha: 0.05),
               blurRadius: 4,
               offset: const Offset(0, 2),
             ),
@@ -882,7 +882,7 @@ class _OrdenCard extends StatelessWidget {
                             vertical: 2,
                           ),
                           decoration: BoxDecoration(
-                            color: _kUrgente.withOpacity(0.1),
+                            color: _kUrgente.withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(4),
                           ),
                           child: const Text(
@@ -1191,10 +1191,10 @@ class _OrdenDetalleSheetState extends State<_OrdenDetalleSheet> {
                     Container(
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
-                        color: _kSuccess.withOpacity(0.07),
+                        color: _kSuccess.withValues(alpha: 0.07),
                         borderRadius: BorderRadius.circular(8),
                         border: Border.all(
-                          color: _kSuccess.withOpacity(0.3),
+                          color: _kSuccess.withValues(alpha: 0.3),
                         ),
                       ),
                       child: Row(
@@ -1448,7 +1448,7 @@ class _SubirResultadoSheetState extends State<_SubirResultadoSheet> {
                 ),
                 decoration: BoxDecoration(
                   color: _archivoBytes != null
-                      ? _kAccent.withOpacity(0.05)
+                      ? _kAccent.withValues(alpha: 0.05)
                       : null,
                   border: Border.all(
                     color: _archivoBytes != null
@@ -1733,7 +1733,7 @@ class _SuccessView extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(24),
               decoration: BoxDecoration(
-                color: _kSuccess.withOpacity(0.1),
+                color: _kSuccess.withValues(alpha: 0.1),
                 shape: BoxShape.circle,
               ),
               child: const Icon(
@@ -1760,9 +1760,9 @@ class _SuccessView extends StatelessWidget {
                 vertical: 10,
               ),
               decoration: BoxDecoration(
-                color: _kPrimary.withOpacity(0.05),
+                color: _kPrimary.withValues(alpha: 0.05),
                 borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: _kPrimary.withOpacity(0.2)),
+                border: Border.all(color: _kPrimary.withValues(alpha: 0.2)),
               ),
               child: Text(
                 correlativo,
@@ -1817,7 +1817,7 @@ class _SectionCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(10),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 4,
             offset: const Offset(0, 2),
           ),
@@ -1867,9 +1867,9 @@ class _EstadoChip extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
+        color: color.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: color.withOpacity(0.4)),
+        border: Border.all(color: color.withValues(alpha: 0.4)),
       ),
       child: Text(
         label,
@@ -2045,7 +2045,7 @@ class _ErrorBanner extends StatelessWidget {
       decoration: BoxDecoration(
         color: const Color(0xFFFEE2E2),
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: _kUrgente.withOpacity(0.3)),
+        border: Border.all(color: _kUrgente.withValues(alpha: 0.3)),
       ),
       child: Row(
         children: [
