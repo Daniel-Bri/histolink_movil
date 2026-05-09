@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:histolink/shared/theme/app_colors.dart';
 import 'package:histolink/GestionDeUsuarios/LoginYAutenticacion/services/auth_service.dart';
+import 'package:histolink/GestionDeUsuarios/LoginYAutenticacion/screens/olvidar_password_screen.dart';
 import 'package:histolink/shared/models/user_model.dart';
 import 'package:histolink/shared/screens/dashboard_screen.dart';
 
@@ -96,7 +97,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         borderRadius: BorderRadius.circular(22),
                         boxShadow: [
                           BoxShadow(
-                            color: AppColors.azulElectrico.withOpacity(0.3),
+                            color: AppColors.azulElectrico.withValues(alpha: 0.3),
                             blurRadius: 20,
                             offset: const Offset(0, 8),
                           ),
@@ -116,7 +117,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                     Text(
                       'Gestión Documental Clínico',
-                      style: TextStyle(fontSize: 13, color: Colors.white.withOpacity(0.75)),
+                      style: TextStyle(fontSize: 13, color: Colors.white.withValues(alpha: 0.75)),
                     ),
 
                     const SizedBox(height: 36),
@@ -129,7 +130,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         borderRadius: BorderRadius.circular(24),
                         boxShadow: [
                           BoxShadow(
-                            color: AppColors.azulElectrico.withOpacity(0.1),
+                            color: AppColors.azulElectrico.withValues(alpha: 0.1),
                             blurRadius: 24,
                             offset: const Offset(0, 8),
                           ),
@@ -213,7 +214,29 @@ class _LoginScreenState extends State<LoginScreen> {
                               ),
                             ],
 
-                            const SizedBox(height: 28),
+                            const SizedBox(height: 12),
+
+                            // Link olvidar contraseña
+                            Align(
+                              alignment: Alignment.centerRight,
+                              child: TextButton(
+                                onPressed: () => Navigator.push(
+                                  context,
+                                  MaterialPageRoute(builder: (_) => const OlvidarPasswordScreen()),
+                                ),
+                                style: TextButton.styleFrom(
+                                  padding: EdgeInsets.zero,
+                                  minimumSize: Size.zero,
+                                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                                ),
+                                child: const Text(
+                                  '¿Olvidaste tu contraseña?',
+                                  style: TextStyle(fontSize: 13, color: AppColors.azulElectrico),
+                                ),
+                              ),
+                            ),
+
+                            const SizedBox(height: 16),
 
                             // Botón iniciar sesión
                             SizedBox(
