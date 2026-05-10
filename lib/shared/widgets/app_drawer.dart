@@ -4,7 +4,9 @@ import 'package:histolink/GestionDeUsuarios/LoginYAutenticacion/services/auth_se
 import 'package:histolink/GestionDeUsuarios/LoginYAutenticacion/screens/login_screen.dart';
 import 'package:histolink/GestionDeUsuarios/RegistroYBusquedaDePacientes/screens/registro_y_busqueda_de_pacientes_screen.dart';
 import 'package:histolink/AtencionClinica/SolicitudDeEstudios/screens/solicitud_de_estudios_screen.dart';
+import 'package:histolink/AtencionClinica/RegistroDeTriaje/screens/registro_de_triaje_screen.dart';
 import 'package:histolink/AtencionClinica/AperturaFichaYColaDeAtencion/screens/apertura_ficha_y_cola_de_atencion_screen.dart';
+import 'package:histolink/SeguridadAvanzadaYAdministracion/ReporteProduccion/screens/reportes_rapidos_screen.dart';
 
 // ── Colores del sidebar (mismos que web) ─────────────────────────────────────
 const _bgSidebar = Color(0xFF122268);
@@ -39,7 +41,7 @@ class _NavItem {
   final IconData icon;
   final bool soon;
   final List<String> roles;
-  final Widget Function()? screenBuilder;
+  final Widget Function(UserModel)? screenBuilder;
 
   const _NavItem({
     required this.label,
@@ -61,7 +63,7 @@ final _sections = <_NavSection>[
     _NavItem(
       label: 'Pacientes',
       icon: Icons.people_outline_rounded,
-      screenBuilder: () => const RegistroYBusquedaDePacientesScreen(),
+      screenBuilder: (_) => const RegistroYBusquedaDePacientesScreen(),
     ),
     _NavItem(
       label: 'Personal de Salud',
@@ -71,6 +73,11 @@ final _sections = <_NavSection>[
     ),
   ]),
   _NavSection(title: 'Atención Clínica', items: [
+    _NavItem(
+      label: 'Fichas del Día',
+      icon: Icons.list_alt_rounded,
+      screenBuilder: (user) => AperturaFichaYColaDeAtencionScreen(user: user),
+    ),
     _NavItem(label: 'Historial Clínico', icon: Icons.assignment_outlined,    soon: true),
     _NavItem(label: 'Documentos',        icon: Icons.folder_outlined,         soon: true),
     _NavItem(label: 'Agenda',            icon: Icons.calendar_month_outlined, soon: true),
@@ -78,13 +85,13 @@ final _sections = <_NavSection>[
       label: 'Triaje',
       icon: Icons.monitor_heart_outlined,
       roles: ['Médico', 'Enfermera'],
-      screenBuilder: () => const AperturaFichaYColaDeAtencionScreen(),
+      screenBuilder: (_) => const RegistroDeTriajeScreen(),
     ),
     _NavItem(
       label: 'Solicitud de Estudios',
       icon: Icons.science_outlined,
       roles: ['Médico', 'Laboratorio'],
-      screenBuilder: () => const SolicitudDeEstudiosScreen(),
+      screenBuilder: (_) => const SolicitudDeEstudiosScreen(),
     ),
   ]),
   _NavSection(title: 'IA + Blockchain', items: [
@@ -93,6 +100,12 @@ final _sections = <_NavSection>[
     _NavItem(label: 'Blockchain',       icon: Icons.link_rounded,           soon: true),
   ]),
   _NavSection(title: 'Seguridad y Admin', items: [
+    _NavItem(
+      label: 'Reportes Rápidos',
+      icon: Icons.analytics_outlined,
+      roles: ['Administrador', 'Médico', 'Jefe de enfermería', 'Director'],
+      screenBuilder: (user) => ReportesRapidosScreen(user: user),
+    ),
     _NavItem(label: 'Auditoría',      icon: Icons.shield_outlined,   soon: true, roles: ['Auditor', 'Director']),
     _NavItem(label: 'Administración', icon: Icons.settings_outlined, soon: true, roles: ['Administrativo', 'Director']),
   ]),
@@ -293,7 +306,7 @@ class AppDrawer extends StatelessWidget {
                                   Navigator.of(context).pop();
                                   Navigator.of(context).push(
                                     MaterialPageRoute(
-                                      builder: (_) => item.screenBuilder!(),
+                                      builder: (_) => item.screenBuilder!(user),
                                     ),
                                   );
                                 },

@@ -25,6 +25,8 @@ class FichaModel {
     required this.paciente,
     required this.fechaApertura,
     required this.tieneTriage,
+    this.nivelUrgencia,
+    this.motivoConsulta,
   });
 
   final int id;
@@ -33,9 +35,13 @@ class FichaModel {
   final FichaPacienteResumen paciente;
   final String fechaApertura;
   final bool tieneTriage;
+  final String? nivelUrgencia;
+  final String? motivoConsulta;
 
   factory FichaModel.fromJson(Map<String, dynamic> json) {
     final pac = json['paciente'];
+    final triaje = json['triaje_resumen'] as Map<String, dynamic>?;
+    
     return FichaModel(
       id: json['id'] as int? ?? 0,
       correlativo: json['correlativo'] as String? ?? '',
@@ -44,16 +50,18 @@ class FichaModel {
           ? FichaPacienteResumen.fromJson(pac)
           : const FichaPacienteResumen(id: 0, nombreCompleto: '', ci: ''),
       fechaApertura: json['fecha_apertura'] as String? ?? '',
-      tieneTriage: json['triaje_resumen'] != null,
+      tieneTriage: triaje != null,
+      nivelUrgencia: triaje?['nivel_urgencia'] as String?,
+      motivoConsulta: triaje?['motivo_consulta_triaje'] as String?,
     );
   }
 
   String get estadoLabel => const {
-        'ABIERTA': 'Abierta',
-        'EN_TRIAJE': 'En Triaje',
+        'ABIERTA': 'Pendiente',
+        'EN_TRIAJE': 'En Enfermería',
         'EN_ATENCION': 'En Atención',
-        'CERRADA': 'Cerrada',
-        'CANCELADA': 'Cancelada',
+        'CERRADA': 'Finalizado',
+        'CANCELADA': 'Cancelado',
       }[estado] ??
       estado;
 }

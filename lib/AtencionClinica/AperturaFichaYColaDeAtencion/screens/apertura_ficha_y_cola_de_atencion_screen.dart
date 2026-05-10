@@ -1,36 +1,15 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:histolink/shared/theme/app_colors.dart';
-import 'package:histolink/AtencionClinica/RegistroDeTriaje/models/ficha_model.dart';
-import 'package:histolink/AtencionClinica/RegistroDeTriaje/services/triaje_service.dart';
-import 'package:histolink/AtencionClinica/RegistroDeTriaje/screens/registro_de_triaje_screen.dart';
-
-Color _estadoColor(FichaModel f) {
-  if (f.tieneTriage) return const Color(0xFF16A34A);
-  return switch (f.estado.toUpperCase()) {
-    'ABIERTA'      => AppColors.azulElectrico,
-    'EN_TRIAJE'    => const Color(0xFFD97706),
-    'EN_ATENCION'  => const Color(0xFF6D28D9),
-    _              => Colors.grey,
-  };
-}
-
-String _tiempoTranscurrido(String fechaIso) {
-  if (fechaIso.isEmpty) return '';
-  try {
-    final dt  = DateTime.parse(fechaIso).toLocal();
-    final now = DateTime.now();
-    final diff = now.difference(dt);
-    if (diff.inMinutes < 1) return 'Ahora';
-    if (diff.inMinutes < 60) return 'hace ${diff.inMinutes} min';
-    if (diff.inHours < 24) return 'hace ${diff.inHours} h';
-    return 'hace ${diff.inDays} d';
-  } catch (_) {
-    return '';
-  }
-}
+import 'package:histolink/shared/widgets/loading_indicator.dart';
+import 'package:histolink/shared/widgets/app_drawer.dart';
+import 'package:histolink/shared/models/user_model.dart';
+import '../../RegistroDeTriaje/models/ficha_model.dart';
+import '../services/ficha_service.dart';
 
 class AperturaFichaYColaDeAtencionScreen extends StatefulWidget {
-  const AperturaFichaYColaDeAtencionScreen({super.key});
+  final UserModel user;
+  const AperturaFichaYColaDeAtencionScreen({super.key, required this.user});
 
   @override
   State<AperturaFichaYColaDeAtencionScreen> createState() =>
@@ -39,446 +18,411 @@ class AperturaFichaYColaDeAtencionScreen extends StatefulWidget {
 
 class _AperturaFichaYColaDeAtencionScreenState
     extends State<AperturaFichaYColaDeAtencionScreen> {
-  final _service = TriajeService();
-
+  final _service = FichaService();
   List<FichaModel> _fichas = [];
-  bool _cargando = true;
+  bool _loading = true;
   String? _error;
+  DateTime _selectedDate = DateTime.now();
+  Timer? _refreshTimer;
 
   @override
   void initState() {
     super.initState();
-    _cargar();
+    _fetchFichas();
+    _refreshTimer = Timer.periodic(
+      const Duration(seconds: 30),
+      (_) => _fetchFichas(silently: true),
+    );
   }
 
-  Future<void> _cargar() async {
-    setState(() {
-      _cargando = true;
-      _error    = null;
-    });
+  @override
+  void dispose() {
+    _refreshTimer?.cancel();
+    super.dispose();
+  }
+
+  Future<void> _fetchFichas({bool silently = false}) async {
+    if (!silently) setState(() => _loading = true);
     try {
-      final lista = await _service.listarEnCola();
-      if (!mounted) return;
-      setState(() => _fichas = lista);
+      final dateStr =
+          "${_selectedDate.year}-${_selectedDate.month.toString().padLeft(2, '0')}-${_selectedDate.day.toString().padLeft(2, '0')}";
+      final list = await _service.listarFichasDelDia(dateStr);
+      if (mounted) {
+        setState(() {
+          _fichas = list;
+          _error = null;
+          _loading = false;
+        });
+      }
     } catch (e) {
-      if (!mounted) return;
-      setState(() => _error = e.toString());
-    } finally {
-      if (mounted) setState(() => _cargando = false);
+      if (mounted) {
+        setState(() {
+          if (!silently) _error = e.toString();
+          _loading = false;
+        });
+      }
     }
   }
 
-  Future<void> _abrirTriaje(FichaModel ficha) async {
-    final result = await Navigator.push<bool>(
-      context,
-      MaterialPageRoute(
-        builder: (_) => RegistroDeTriajeScreen(fichaInicial: ficha),
-      ),
+  Future<void> _selectDate() async {
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: _selectedDate,
+      firstDate: DateTime(2020),
+      lastDate: DateTime(2030),
     );
-    if (result == true) _cargar();
-  }
-
-  Future<void> _nuevoTriaje() async {
-    final result = await Navigator.push<bool>(
-      context,
-      MaterialPageRoute(builder: (_) => const RegistroDeTriajeScreen()),
-    );
-    if (result == true) _cargar();
+    if (picked != null && picked != _selectedDate) {
+      setState(() => _selectedDate = picked);
+      _fetchFichas();
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.fondo,
+      drawer: AppDrawer(user: widget.user, activeLabel: 'Fichas del Día'),
       appBar: AppBar(
-        title: const Text('Cola de atención'),
+        title: const Text(
+          'Fichas del día',
+          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+        ),
         backgroundColor: AppColors.azulElectrico,
         foregroundColor: Colors.white,
         actions: [
           IconButton(
+            icon: const Icon(Icons.calendar_today_outlined, size: 20),
+            onPressed: _selectDate,
+          ),
+          IconButton(
             icon: const Icon(Icons.refresh_rounded),
-            tooltip: 'Actualizar',
-            onPressed: _cargando ? null : _cargar,
+            onPressed: () => _fetchFichas(),
           ),
         ],
       ),
-      body: _buildBody(),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: _nuevoTriaje,
-        backgroundColor: AppColors.azulElectrico,
-        foregroundColor: Colors.white,
-        icon: const Icon(Icons.add_rounded),
-        label: const Text('Nuevo triaje', style: TextStyle(fontWeight: FontWeight.w600)),
+      body: Column(
+        children: [
+          _buildSummaryBar(),
+          Expanded(
+            child: _loading && _fichas.isEmpty
+                ? const LoadingIndicator(message: 'Cargando fichas...')
+                : _error != null
+                    ? Center(
+                        child: Text(
+                          _error!,
+                          style: const TextStyle(color: Colors.red),
+                        ),
+                      )
+                    : RefreshIndicator(
+                        onRefresh: () => _fetchFichas(silently: true),
+                        child: _fichas.isEmpty
+                            ? _buildEmptyState()
+                            : ListView.builder(
+                                padding: const EdgeInsets.all(16),
+                                itemCount: _fichas.length,
+                                itemBuilder: (context, index) =>
+                                    _FichaCard(ficha: _fichas[index]),
+                              ),
+                      ),
+          ),
+        ],
       ),
     );
   }
 
-  Widget _buildBody() {
-    if (_cargando) {
-      return const Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            CircularProgressIndicator(),
-            SizedBox(height: 16),
-            Text('Cargando cola de atención…', style: TextStyle(color: Colors.grey)),
-          ],
-        ),
-      );
-    }
-
-    if (_error != null) {
-      return Center(
-        child: Padding(
-          padding: const EdgeInsets.all(32),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(Icons.cloud_off_rounded, size: 64, color: Colors.red.shade300),
-              const SizedBox(height: 16),
-              const Text(
-                'No se pudo cargar la cola',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                _error!,
-                textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 13, color: Colors.grey.shade600),
-              ),
-              const SizedBox(height: 20),
-              FilledButton.icon(
-                onPressed: _cargar,
-                icon: const Icon(Icons.refresh_rounded),
-                label: const Text('Reintentar'),
-                style: FilledButton.styleFrom(backgroundColor: AppColors.azulElectrico),
-              ),
-            ],
-          ),
-        ),
-      );
-    }
-
-    if (_fichas.isEmpty) {
-      return RefreshIndicator(
-        onRefresh: _cargar,
-        child: ListView(
-          physics: const AlwaysScrollableScrollPhysics(),
-          children: [
-            SizedBox(height: MediaQuery.of(context).size.height * 0.2),
-            Icon(Icons.inbox_rounded, size: 72, color: Colors.grey.shade300),
-            const SizedBox(height: 16),
-            Text(
-              'Cola vacía',
-              textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600, color: Colors.grey.shade600),
-            ),
-            const SizedBox(height: 8),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 40),
-              child: Text(
-                'No hay fichas en curso.\nUsa el botón + para registrar un triaje.',
-                textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 13, color: Colors.grey.shade500),
-              ),
-            ),
-          ],
-        ),
-      );
-    }
-
-    final pendientes = _fichas.where((f) => !f.tieneTriage).toList();
-    final triajados  = _fichas.where((f) => f.tieneTriage).toList();
-
-    return RefreshIndicator(
-      onRefresh: _cargar,
-      child: ListView(
-        padding: const EdgeInsets.fromLTRB(16, 12, 16, 100),
+  Widget _buildSummaryBar() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+      color: Colors.white,
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          // ── Resumen ──────────────────────────────────────────────────────
-          _ResumenBanner(total: _fichas.length, pendientes: pendientes.length),
-          const SizedBox(height: 16),
-
-          // ── Pendientes de triaje ──────────────────────────────────────────
-          if (pendientes.isNotEmpty) ...[
-            _SeccionHeader(
-              label: 'Pendientes de triaje',
-              count: pendientes.length,
-              color: const Color(0xFFDC2626),
+          Text(
+            "${_selectedDate.day}/${_selectedDate.month}/${_selectedDate.year}",
+            style: const TextStyle(
+              fontWeight: FontWeight.w600,
+              color: AppColors.azulElectrico,
             ),
-            const SizedBox(height: 8),
-            ...pendientes.map(
-              (f) => _FichaQueueCard(
-                ficha: f,
-                onTap: () => _abrirTriaje(f),
+          ),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+            decoration: BoxDecoration(
+              color: AppColors.azulCielo,
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Text(
+              '${_fichas.length} total',
+              style: const TextStyle(
+                color: AppColors.azulElectrico,
+                fontSize: 11,
+                fontWeight: FontWeight.bold,
               ),
             ),
-            const SizedBox(height: 16),
-          ],
-
-          // ── Ya triajados ─────────────────────────────────────────────────
-          if (triajados.isNotEmpty) ...[
-            _SeccionHeader(
-              label: 'Triaje completado',
-              count: triajados.length,
-              color: const Color(0xFF16A34A),
-            ),
-            const SizedBox(height: 8),
-            ...triajados.map(
-              (f) => _FichaQueueCard(ficha: f, onTap: null),
-            ),
-          ],
+          ),
         ],
       ),
+    );
+  }
+
+  Widget _buildEmptyState() {
+    return ListView(
+      children: [
+        SizedBox(height: MediaQuery.of(context).size.height * 0.2),
+        const Icon(Icons.assignment_outlined, size: 80, color: Colors.grey),
+        const SizedBox(height: 16),
+        const Center(
+          child: Text(
+            'No hay fichas para este día',
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+              color: Colors.grey,
+            ),
+          ),
+        ),
+      ],
     );
   }
 }
 
-// ── Widgets auxiliares ────────────────────────────────────────────────────────
+class _FichaCard extends StatelessWidget {
+  final FichaModel ficha;
+  const _FichaCard({required this.ficha});
 
-class _ResumenBanner extends StatelessWidget {
-  const _ResumenBanner({required this.total, required this.pendientes});
+  Color _getUrgenciaColor(String? nivel) {
+    switch (nivel?.toUpperCase()) {
+      case 'ROJO':
+        return const Color(0xFFEF4444);
+      case 'NARANJA':
+        return const Color(0xFFF97316);
+      case 'AMARILLO':
+        return const Color(0xFFF59E0B);
+      case 'VERDE':
+        return const Color(0xFF10B981);
+      case 'AZUL':
+        return const Color(0xFF3B82F6);
+      default:
+        return Colors.grey.shade400;
+    }
+  }
 
-  final int total;
-  final int pendientes;
+  Color _getEstadoColor(String estado) {
+    switch (estado) {
+      case 'PENDIENTE':
+        return const Color(0xFFF59E0B);
+      case 'EN_ATENCION':
+        return const Color(0xFF3B82F6);
+      case 'EN_TRIAJE':
+        return const Color(0xFF06B6D4);
+      case 'FINALIZADO':
+        return const Color(0xFF10B981);
+      case 'CANCELADO':
+        return Colors.grey;
+      default:
+        return Colors.blueGrey;
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
+    final initials = ficha.paciente.nombreCompleto.isNotEmpty
+        ? ficha.paciente.nombreCompleto
+            .split(' ')
+            .map((e) => e[0])
+            .take(2)
+            .join()
+            .toUpperCase()
+        : '?';
+
+    final urgColor = _getUrgenciaColor(ficha.nivelUrgencia);
+
+    final apertura = DateTime.tryParse(ficha.fechaApertura);
+    int waitMin = 0;
+    if (apertura != null) {
+      waitMin = DateTime.now().difference(apertura.toLocal()).inMinutes;
+    }
+
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: AppColors.azulElectrico.withOpacity(0.07),
-            blurRadius: 8,
-            offset: const Offset(0, 3),
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 6,
+            offset: const Offset(0, 2),
           ),
         ],
       ),
-      child: Row(
-        children: [
-          _StatChip(
-            icon: Icons.list_alt_rounded,
-            label: 'Total',
-            value: '$total',
-            color: AppColors.azulElectrico,
-          ),
-          const SizedBox(width: 12),
-          _StatChip(
-            icon: Icons.pending_actions_rounded,
-            label: 'Pendientes',
-            value: '$pendientes',
-            color: pendientes > 0 ? const Color(0xFFDC2626) : Colors.grey,
-          ),
-          const SizedBox(width: 12),
-          _StatChip(
-            icon: Icons.check_circle_outline_rounded,
-            label: 'Triajados',
-            value: '${total - pendientes}',
-            color: const Color(0xFF16A34A),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _StatChip extends StatelessWidget {
-  const _StatChip({
-    required this.icon,
-    required this.label,
-    required this.value,
-    required this.color,
-  });
-
-  final IconData icon;
-  final String label;
-  final String value;
-  final Color color;
-
-  @override
-  Widget build(BuildContext context) => Expanded(
-        child: Column(
+      child: IntrinsicHeight(
+        child: Row(
           children: [
-            Icon(icon, color: color, size: 20),
-            const SizedBox(height: 4),
-            Text(
-              value,
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: color),
-            ),
-            Text(label, style: TextStyle(fontSize: 10, color: Colors.grey.shade600)),
-          ],
-        ),
-      );
-}
-
-class _SeccionHeader extends StatelessWidget {
-  const _SeccionHeader({
-    required this.label,
-    required this.count,
-    required this.color,
-  });
-
-  final String label;
-  final int count;
-  final Color color;
-
-  @override
-  Widget build(BuildContext context) => Row(
-        children: [
-          Container(
-            width: 3,
-            height: 16,
-            decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(2)),
-          ),
-          const SizedBox(width: 8),
-          Text(
-            label,
-            style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: color),
-          ),
-          const SizedBox(width: 8),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-            decoration: BoxDecoration(
-              color: color.withOpacity(0.12),
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: Text(
-              '$count',
-              style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: color),
-            ),
-          ),
-        ],
-      );
-}
-
-class _FichaQueueCard extends StatelessWidget {
-  const _FichaQueueCard({required this.ficha, this.onTap});
-
-  final FichaModel ficha;
-  final VoidCallback? onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final color    = _estadoColor(ficha);
-    final tiempo   = _tiempoTranscurrido(ficha.fechaApertura);
-    final disabled = onTap == null;
-
-    return Card(
-      margin: const EdgeInsets.only(bottom: 10),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      elevation: disabled ? 0 : 1,
-      color: disabled ? Colors.grey.shade50 : Colors.white,
-      child: InkWell(
-        borderRadius: BorderRadius.circular(12),
-        onTap: onTap,
-        child: Padding(
-          padding: const EdgeInsets.all(14),
-          child: Row(
-            children: [
-              // ── Indicador de color ────────────────────────────────────────
-              Container(
-                width: 4,
-                height: 48,
-                decoration: BoxDecoration(
-                  color: color,
-                  borderRadius: BorderRadius.circular(2),
+            Container(
+              width: 5,
+              decoration: BoxDecoration(
+                color: urgColor,
+                borderRadius: const BorderRadius.only(
+                  topLeft: Radius.circular(12),
+                  bottomLeft: Radius.circular(12),
                 ),
               ),
-              const SizedBox(width: 12),
-
-              // ── Contenido ─────────────────────────────────────────────────
-              Expanded(
+            ),
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.all(16),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Expanded(
-                          child: Text(
-                            ficha.paciente.nombreCompleto.isEmpty
-                                ? 'Paciente #${ficha.paciente.id}'
-                                : ficha.paciente.nombreCompleto,
-                            style: TextStyle(
-                              fontWeight: FontWeight.w700,
-                              fontSize: 14,
-                              color: disabled ? Colors.grey.shade500 : Colors.black87,
-                            ),
-                          ),
-                        ),
-                        if (tiempo.isNotEmpty)
-                          Text(
-                            tiempo,
-                            style: TextStyle(fontSize: 11, color: Colors.grey.shade500),
-                          ),
-                      ],
-                    ),
-                    const SizedBox(height: 3),
-                    Row(
-                      children: [
-                        Text(
-                          ficha.correlativo,
-                          style: TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w600,
-                            color: disabled ? Colors.grey.shade400 : color,
-                          ),
-                        ),
-                        const SizedBox(width: 8),
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 3,
+                          ),
                           decoration: BoxDecoration(
-                            color: color.withOpacity(0.1),
-                            borderRadius: BorderRadius.circular(20),
+                            color: _getEstadoColor(ficha.estado).withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(6),
                           ),
                           child: Text(
                             ficha.estadoLabel,
                             style: TextStyle(
+                              color: _getEstadoColor(ficha.estado),
                               fontSize: 10,
-                              fontWeight: FontWeight.w600,
-                              color: color,
+                              fontWeight: FontWeight.bold,
                             ),
+                          ),
+                        ),
+                        Text(
+                          'Ficha #${ficha.correlativo}',
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: Colors.grey.shade600,
+                            fontWeight: FontWeight.w600,
                           ),
                         ),
                       ],
                     ),
-                    if (ficha.paciente.ci.isNotEmpty) ...[
-                      const SizedBox(height: 2),
-                      Text(
-                        'CI: ${ficha.paciente.ci}',
-                        style: TextStyle(fontSize: 11, color: Colors.grey.shade500),
+                    const SizedBox(height: 12),
+                    Row(
+                      children: [
+                        CircleAvatar(
+                          radius: 18,
+                          backgroundColor: AppColors.azulElectrico,
+                          child: Text(
+                            initials,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                ficha.paciente.nombreCompleto,
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 14,
+                                ),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              Text(
+                                'CI: ${ficha.paciente.ci}',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: Colors.grey.shade500,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    Wrap(
+                      spacing: 8,
+                      children: [
+                        _buildBadge(Icons.access_time, _formatTime(apertura)),
+                        _buildBadge(
+                          Icons.timer_outlined,
+                          '$waitMin min',
+                          color: AppColors.azulElectrico,
+                        ),
+                        if (ficha.nivelUrgencia != null)
+                          _buildBadge(
+                            Icons.emergency_outlined,
+                            ficha.nivelUrgencia!,
+                            color: urgColor,
+                          ),
+                      ],
+                    ),
+                    if (ficha.motivoConsulta != null &&
+                        ficha.motivoConsulta!.isNotEmpty) ...[
+                      const SizedBox(height: 10),
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: Colors.grey.shade50,
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: Text(
+                          '"${ficha.motivoConsulta}"',
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: Colors.grey.shade700,
+                            fontStyle: FontStyle.italic,
+                          ),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
                       ),
                     ],
                   ],
                 ),
               ),
-
-              // ── Acción ────────────────────────────────────────────────────
-              const SizedBox(width: 8),
-              if (ficha.tieneTriage)
-                Icon(Icons.check_circle_rounded, color: const Color(0xFF16A34A), size: 24)
-              else
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                  decoration: BoxDecoration(
-                    color: AppColors.azulElectrico,
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: const Text(
-                    'Triaje',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 12,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
+  }
+
+  Widget _buildBadge(IconData icon, String label, {Color color = Colors.grey}) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.08),
+        borderRadius: BorderRadius.circular(6),
+        border: Border.all(color: color.withOpacity(0.2)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 12, color: color),
+          const SizedBox(width: 4),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 10,
+              color: color,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  String _formatTime(DateTime? dt) {
+    if (dt == null) return '--:--';
+    final local = dt.toLocal();
+    return "${local.hour.toString().padLeft(2, '0')}:${local.minute.toString().padLeft(2, '0')}";
   }
 }
