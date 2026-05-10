@@ -233,6 +233,61 @@ class _RegistroDeTriajeScreenState extends State<RegistroDeTriajeScreen> {
     });
   }
 
+  void _verTriajeExistente(FichaModel f) {
+    final nivel = f.nivelUrgencia ?? '';
+    final color = nivel.isNotEmpty ? _nivelColor(nivel) : Colors.grey;
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (_) => Padding(
+        padding: const EdgeInsets.fromLTRB(24, 20, 24, 32),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Center(
+              child: Container(
+                width: 40, height: 4,
+                decoration: BoxDecoration(color: Colors.grey.shade300, borderRadius: BorderRadius.circular(2)),
+              ),
+            ),
+            const SizedBox(height: 16),
+            Row(children: [
+              Icon(Icons.assignment_turned_in_rounded, color: color, size: 26),
+              const SizedBox(width: 10),
+              Text('Triaje registrado', style: TextStyle(fontSize: 17, fontWeight: FontWeight.w700, color: color)),
+            ]),
+            const SizedBox(height: 16),
+            _InfoRow(label: 'Ficha', value: f.correlativo),
+            _InfoRow(label: 'Estado', value: f.estadoLabel),
+            if (nivel.isNotEmpty)
+              _InfoRow(
+                label: 'Nivel de urgencia',
+                value: _kLevelLabel[nivel] ?? nivel,
+                valueColor: color,
+              ),
+            if (f.motivoConsulta != null && f.motivoConsulta!.isNotEmpty)
+              _InfoRow(label: 'Motivo', value: f.motivoConsulta!),
+            const SizedBox(height: 20),
+            SizedBox(
+              width: double.infinity,
+              child: FilledButton(
+                onPressed: () {
+                  Navigator.pop(context);
+                  _seleccionarFicha(f);
+                },
+                style: FilledButton.styleFrom(backgroundColor: AppColors.azulElectrico),
+                child: const Text('Registrar nuevo triaje'),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   // ── Paso 3a: clasificar con IA ────────────────────────────────────────────
 
   Future<void> _clasificar() async {
@@ -529,7 +584,9 @@ class _RegistroDeTriajeScreenState extends State<RegistroDeTriajeScreen> {
                 ..._fichas.map(
                   (f) => _FichaCard(
                     ficha: f,
-                    onTap: f.tieneTriage ? null : () => _seleccionarFicha(f),
+                    onTap: f.tieneTriage
+                        ? () => _verTriajeExistente(f)
+                        : () => _seleccionarFicha(f),
                   ),
                 ),
               ],
@@ -898,21 +955,23 @@ class _FichaCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final disabled = onTap == null;
+    final hasTriaje = ficha.tieneTriage;
+    final nivel = ficha.nivelUrgencia ?? '';
+    final nivelColor = nivel.isNotEmpty ? _nivelColor(nivel) : Colors.green.shade600;
     return Card(
       margin: const EdgeInsets.only(bottom: 10),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       elevation: 1,
       child: InkWell(
         borderRadius: BorderRadius.circular(12),
-        onTap: disabled ? null : onTap,
+        onTap: onTap,
         child: Padding(
           padding: const EdgeInsets.all(14),
           child: Row(
             children: [
               Icon(
                 Icons.folder_outlined,
-                color: disabled ? Colors.grey.shade400 : AppColors.azulElectrico,
+                color: hasTriaje ? nivelColor : AppColors.azulElectrico,
               ),
               const SizedBox(width: 12),
               Expanded(
@@ -923,24 +982,60 @@ class _FichaCard extends StatelessWidget {
                       ficha.correlativo,
                       style: TextStyle(
                         fontWeight: FontWeight.w700,
-                        color: disabled ? Colors.grey.shade500 : AppColors.azulElectrico,
+                        color: hasTriaje ? nivelColor : AppColors.azulElectrico,
                       ),
                     ),
                     const SizedBox(height: 2),
                     Text(
-                      ficha.estadoLabel + (ficha.tieneTriage ? ' · Ya tiene triaje' : ''),
+                      hasTriaje
+                          ? '${ficha.estadoLabel} · ${_kLevelLabel[nivel] ?? nivel}'
+                          : ficha.estadoLabel,
                       style: TextStyle(fontSize: 13, color: Colors.grey.shade600),
                     ),
                   ],
                 ),
               ),
-              if (ficha.tieneTriage)
-                Icon(Icons.check_circle_rounded, color: Colors.green.shade600, size: 20)
+              if (hasTriaje)
+                Icon(Icons.check_circle_rounded, color: nivelColor, size: 20)
               else
                 Icon(Icons.arrow_forward_ios_rounded, color: Colors.grey.shade400, size: 16),
             ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _InfoRow extends StatelessWidget {
+  const _InfoRow({required this.label, required this.value, this.valueColor});
+
+  final String label;
+  final String value;
+  final Color? valueColor;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 5),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            width: 130,
+            child: Text(label, style: TextStyle(fontSize: 13, color: Colors.grey.shade600)),
+          ),
+          Expanded(
+            child: Text(
+              value,
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                color: valueColor ?? Colors.grey.shade900,
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

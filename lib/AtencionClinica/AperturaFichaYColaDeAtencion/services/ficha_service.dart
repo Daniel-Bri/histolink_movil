@@ -31,6 +31,29 @@ class FichaService {
     throw FichaApiException('Error al cargar fichas', statusCode: res.statusCode);
   }
 
+  Future<FichaModel> crearFicha({
+    required int pacienteId,
+    String? motivoConsulta,
+  }) async {
+    final body = <String, dynamic>{'paciente': pacienteId};
+    if (motivoConsulta != null && motivoConsulta.trim().isNotEmpty) {
+      body['motivo_consulta'] = motivoConsulta.trim();
+    }
+    final res = await _api.post(_base, body: body);
+    if (res.statusCode == 200 || res.statusCode == 201) {
+      return FichaModel.fromJson(jsonDecode(res.body) as Map<String, dynamic>);
+    }
+    String msg = 'Error al crear ficha';
+    try {
+      final decoded = jsonDecode(res.body);
+      if (decoded is Map) {
+        final detail = decoded['detail'] ?? decoded['non_field_errors'];
+        if (detail != null) msg = detail.toString();
+      }
+    } catch (_) {}
+    throw FichaApiException(msg, statusCode: res.statusCode);
+  }
+
   Future<void> cambiarEstado(int id, String nuevoEstado) async {
     final res = await _api.patch('$_base$id/', body: {'estado': nuevoEstado});
     if (res.statusCode != 200) {

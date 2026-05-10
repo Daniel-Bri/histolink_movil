@@ -7,66 +7,62 @@ class ReporteService {
   ReporteService({ApiService? api}) : _api = api ?? ApiService();
 
   final ApiService _api;
+  static const _endpoint = '/api/reportes/produccion/';
 
-  static const _base = '/api/reportes/';
-
-  /// POST /api/reportes/previsualizar/
-  Future<List<Map<String, dynamic>>> previsualizar({
+  /// GET /api/reportes/produccion/ → formato json
+  Future<Map<String, dynamic>> previsualizar({
     required String fechaDesde,
     required String fechaHasta,
-    required String tipo,
-    String? estado,
-    String? textoLibre,
+    String tipoReporte = 'resumen_general',
+    String? nivelUrgencia,
+    String? q,
   }) async {
-    final body = {
+    final params = <String, String>{
       'fecha_desde': fechaDesde,
       'fecha_hasta': fechaHasta,
-      'tipo': tipo,
-      if (estado != null && estado != 'Todos') 'estado': estado,
-      if (textoLibre != null && textoLibre.isNotEmpty) 'texto_libre': textoLibre,
+      'tipo_reporte': tipoReporte,
+      if (nivelUrgencia != null && nivelUrgencia != 'Todos') 'nivel_urgencia': nivelUrgencia,
+      if (q != null && q.trim().isNotEmpty) 'q': q.trim(),
     };
 
-    final res = await _api.post('${_base}previsualizar/', body: body);
+    final res = await _api.get(_endpoint, queryParameters: params);
     if (res.statusCode == 200) {
-      final decoded = jsonDecode(res.body);
-      if (decoded is List) {
-        return List<Map<String, dynamic>>.from(decoded);
-      } else if (decoded is Map && decoded.containsKey('results')) {
-        return List<Map<String, dynamic>>.from(decoded['results']);
-      }
-      return [];
+      return jsonDecode(res.body) as Map<String, dynamic>;
     }
-    throw Exception('Error al previsualizar reporte: ${res.statusCode}');
+    String msg = 'Error ${res.statusCode}';
+    try {
+      final d = jsonDecode(res.body);
+      if (d is Map && d['detail'] != null) msg = d['detail'].toString();
+    } catch (_) {}
+    throw Exception(msg);
   }
 
-  /// Descarga el reporte en el formato especificado
+  /// GET /api/reportes/produccion/?formato=csv|excel|pdf
   Future<File> exportar({
-    required String formato, // 'csv', 'excel', 'pdf'
+    required String formato,
     required String fechaDesde,
     required String fechaHasta,
-    required String tipo,
-    String? estado,
-    String? textoLibre,
+    String tipoReporte = 'resumen_general',
+    String? nivelUrgencia,
+    String? q,
   }) async {
-    final queryParams = {
+    final params = <String, String>{
       'fecha_desde': fechaDesde,
       'fecha_hasta': fechaHasta,
-      'tipo': tipo,
-      if (estado != null && estado != 'Todos') 'estado': estado,
-      if (textoLibre != null && textoLibre.isNotEmpty) 'texto_libre': textoLibre,
+      'tipo_reporte': tipoReporte,
+      'formato': formato,
+      if (nivelUrgencia != null && nivelUrgencia != 'Todos') 'nivel_urgencia': nivelUrgencia,
+      if (q != null && q.trim().isNotEmpty) 'q': q.trim(),
     };
 
-    final res = await _api.get('${_base}exportar/$formato/', queryParameters: queryParams);
-    
+    final res = await _api.get(_endpoint, queryParameters: params);
     if (res.statusCode == 200) {
-      final bytes = res.bodyBytes;
       final tempDir = await getTemporaryDirectory();
-      final timestamp = DateTime.now().millisecondsSinceEpoch;
       final ext = formato == 'excel' ? 'xlsx' : formato;
-      final file = File('${tempDir.path}/reporte_$timestamp.$ext');
-      await file.writeAsBytes(bytes);
+      final file = File('${tempDir.path}/reporte_${DateTime.now().millisecondsSinceEpoch}.$ext');
+      await file.writeAsBytes(res.bodyBytes);
       return file;
     }
-    throw Exception('Error al exportar reporte ($formato): ${res.statusCode}');
+    throw Exception('Error al exportar ($formato): ${res.statusCode}');
   }
 }
