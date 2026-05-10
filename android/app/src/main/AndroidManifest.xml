@@ -1,5 +1,9 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+
     <application
         android:label="histolink"
         android:name="${applicationName}"
@@ -47,12 +51,16 @@
             <data android:mimeType="text/plain"/>
         </intent>
         <intent>
+<<<<<<< HEAD
             <action android:name="android.intent.action.VIEW" />
             <data android:scheme="https" />
         </intent>
         <intent>
             <action android:name="android.intent.action.VIEW" />
             <data android:scheme="http" />
+=======
+            <action android:name="android.speech.RecognitionService" />
+>>>>>>> 9cf1fbf (T042 Pantalla reportes movil: filtros simplificados + texto libre + boton de voz con speech_to_text +exportar (CSV, Excel, PDF))
         </intent>
     </queries>
 </manifest>
