@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:histolink/app_navigator.dart';
 import 'package:histolink/shared/config/api_config.dart';
+import 'package:histolink/shared/screens/acceso_denegado_screen.dart';
 import 'package:histolink/GestionDeUsuarios/LoginYAutenticacion/services/auth_service.dart';
 import 'package:histolink/GestionDeUsuarios/LoginYAutenticacion/screens/login_screen.dart';
 
@@ -31,12 +32,25 @@ class ApiService {
     );
   }
 
+  void _goToAccesoDenegado(int statusCode) {
+    final nav = appNavigatorKey.currentState;
+    if (nav == null) return;
+    nav.push(MaterialPageRoute<void>(
+      builder: (_) => AccesoDenegadoScreen(
+        tipo: statusCode == 401
+            ? TipoAccesoDenegado.sesionExpirada
+            : TipoAccesoDenegado.sinPermiso,
+      ),
+    ));
+  }
+
   Future<http.Response> _send(
     Future<http.Response> Function(Map<String, String> headers) request, {
     bool jsonBody = false,
     bool retried = false,
   }) async {
     var response = await request(await _headers(jsonBody: jsonBody));
+
     if (response.statusCode == 401 && !retried) {
       final ok = await _auth.tryRefreshAccessToken();
       if (ok) {
@@ -46,6 +60,11 @@ class ApiService {
         await _goToLogin();
       }
     }
+
+    if (response.statusCode == 403) {
+      _goToAccesoDenegado(403);
+    }
+
     return response;
   }
 
