@@ -6,6 +6,7 @@ import 'package:histolink/shared/widgets/app_drawer.dart';
 import 'package:histolink/shared/models/user_model.dart';
 import '../../RegistroDeTriaje/models/ficha_model.dart';
 import '../services/ficha_service.dart';
+import '../../ConsultaMedicaSOAP/screens/consulta_soap_screen.dart';
 
 class AperturaFichaYColaDeAtencionScreen extends StatefulWidget {
   final UserModel user;
@@ -192,111 +193,126 @@ class _FichaCard extends StatelessWidget {
         : '?';
 
     final urgColor = _getUrgenciaColor(ficha.nivelUrgencia);
-    
-    // Calcular tiempo de espera (aproximado)
+
     final apertura = DateTime.tryParse(ficha.fechaApertura);
     int waitMin = 0;
     if (apertura != null) {
       waitMin = DateTime.now().difference(apertura.toLocal()).inMinutes;
     }
 
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 6, offset: const Offset(0, 2)),
-        ],
-      ),
-      child: IntrinsicHeight(
-        child: Row(
-          children: [
-            Container(
-              width: 5,
-              decoration: BoxDecoration(
-                color: urgColor,
-                borderRadius: const BorderRadius.only(topLeft: Radius.circular(12), bottomLeft: Radius.circular(12)),
-              ),
+    return InkWell(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => ConsultaSoapScreen(
+              fichaId: ficha.id,
+              initialData: {
+                'paciente_nombre': ficha.paciente.nombreCompleto,
+                'paciente_id': ficha.paciente.id,
+              },
             ),
-            Expanded(
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                          decoration: BoxDecoration(
-                            color: _getEstadoColor(ficha.estado).withOpacity(0.1),
-                            borderRadius: BorderRadius.circular(6),
-                          ),
-                          child: Text(
-                            ficha.estadoLabel,
-                            style: TextStyle(color: _getEstadoColor(ficha.estado), fontSize: 10, fontWeight: FontWeight.bold),
-                          ),
-                        ),
-                        Text(
-                          'Ficha #${ficha.correlativo}',
-                          style: TextStyle(fontSize: 11, color: Colors.grey.shade600, fontWeight: FontWeight.w600),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 12),
-                    Row(
-                      children: [
-                        CircleAvatar(
-                          radius: 18,
-                          backgroundColor: AppColors.azulElectrico,
-                          child: Text(initials, style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold)),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                ficha.paciente.nombreCompleto,
-                                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                              Text('CI: ${ficha.paciente.ci}', style: TextStyle(fontSize: 12, color: Colors.grey.shade500)),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 12),
-                    Wrap(
-                      spacing: 8,
-                      children: [
-                        _buildBadge(Icons.access_time, _formatTime(apertura)),
-                        _buildBadge(Icons.timer_outlined, '$waitMin min', color: AppColors.azulElectrico),
-                        if (ficha.nivelUrgencia != null)
-                          _buildBadge(Icons.emergency_outlined, ficha.nivelUrgencia!, color: urgColor),
-                      ],
-                    ),
-                    if (ficha.motivoConsulta != null && ficha.motivoConsulta!.isNotEmpty) ...[
-                      const SizedBox(height: 10),
-                      Container(
-                        padding: const EdgeInsets.all(8),
-                        decoration: BoxDecoration(color: Colors.grey.shade50, borderRadius: BorderRadius.circular(6)),
-                        child: Text(
-                          '"${ficha.motivoConsulta}"',
-                          style: TextStyle(fontSize: 11, color: Colors.grey.shade700, fontStyle: FontStyle.italic),
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                    ],
-                  ],
+          ),
+        );
+      },
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 12),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          boxShadow: [
+            BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 6, offset: const Offset(0, 2)),
+          ],
+        ),
+        child: IntrinsicHeight(
+          child: Row(
+            children: [
+              Container(
+                width: 5,
+                decoration: BoxDecoration(
+                  color: urgColor,
+                  borderRadius: const BorderRadius.only(topLeft: Radius.circular(12), bottomLeft: Radius.circular(12)),
                 ),
               ),
-            ),
-          ],
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                            decoration: BoxDecoration(
+                              color: _getEstadoColor(ficha.estado).withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                            child: Text(
+                              ficha.estadoLabel,
+                              style: TextStyle(color: _getEstadoColor(ficha.estado), fontSize: 10, fontWeight: FontWeight.bold),
+                            ),
+                          ),
+                          Text(
+                            'Ficha #${ficha.correlativo}',
+                            style: TextStyle(fontSize: 11, color: Colors.grey.shade600, fontWeight: FontWeight.w600),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+                      Row(
+                        children: [
+                          CircleAvatar(
+                            radius: 18,
+                            backgroundColor: AppColors.azulElectrico,
+                            child: Text(initials, style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold)),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  ficha.paciente.nombreCompleto,
+                                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                                Text('CI: ${ficha.paciente.ci}', style: TextStyle(fontSize: 12, color: Colors.grey.shade500)),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+                      Wrap(
+                        spacing: 8,
+                        children: [
+                          _buildBadge(Icons.access_time, _formatTime(apertura)),
+                          _buildBadge(Icons.timer_outlined, '$waitMin min', color: AppColors.azulElectrico),
+                          if (ficha.nivelUrgencia != null)
+                            _buildBadge(Icons.emergency_outlined, ficha.nivelUrgencia!, color: urgColor),
+                        ],
+                      ),
+                      if (ficha.motivoConsulta != null && ficha.motivoConsulta!.isNotEmpty) ...[
+                        const SizedBox(height: 10),
+                        Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(color: Colors.grey.shade50, borderRadius: BorderRadius.circular(6)),
+                          child: Text(
+                            '"${ficha.motivoConsulta}"',
+                            style: TextStyle(fontSize: 11, color: Colors.grey.shade700, fontStyle: FontStyle.italic),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

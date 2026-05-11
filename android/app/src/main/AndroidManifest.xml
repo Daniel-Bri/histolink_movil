@@ -51,16 +51,15 @@
             <data android:mimeType="text/plain"/>
         </intent>
         <intent>
-<<<<<<< HEAD
             <action android:name="android.intent.action.VIEW" />
             <data android:scheme="https" />
         </intent>
         <intent>
             <action android:name="android.intent.action.VIEW" />
             <data android:scheme="http" />
-=======
+        </intent>
+        <intent>
             <action android:name="android.speech.RecognitionService" />
->>>>>>> 9cf1fbf (T042 Pantalla reportes movil: filtros simplificados + texto libre + boton de voz con speech_to_text +exportar (CSV, Excel, PDF))
         </intent>
     </queries>
 </manifest>

@@ -334,7 +334,6 @@ class _RegistroDeTriajeScreenState extends State<RegistroDeTriajeScreen> {
       color: AppColors.azulElectrico,
       child: Column(
         children: [
-          // Barra de búsqueda
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
             child: TextField(
@@ -357,8 +356,6 @@ class _RegistroDeTriajeScreenState extends State<RegistroDeTriajeScreen> {
               ),
             ),
           ),
-
-          // Chips de estadísticas
           if (!_cargandoCola && _cola.isNotEmpty)
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
@@ -372,8 +369,6 @@ class _RegistroDeTriajeScreenState extends State<RegistroDeTriajeScreen> {
                 ],
               ),
             ),
-
-          // Lista
           Expanded(
             child: _cargandoCola
                 ? const LoadingIndicator(message: 'Cargando fichas del día…')
@@ -442,7 +437,6 @@ class _RegistroDeTriajeScreenState extends State<RegistroDeTriajeScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Info ficha
           if (_ficha != null)
             Container(
               padding: const EdgeInsets.all(14),
@@ -692,8 +686,8 @@ class _BuscarPacienteSheetState extends State<_BuscarPacienteSheet> {
   Timer? _searchTimer;
 
   List<PacienteModel> _resultados = [];
-  bool _buscando   = false;
-  bool _creanDo    = false;
+  bool _buscando        = false;
+  bool _creanDo         = false;
   bool _buscoPrimeraVez = false;
 
   @override
@@ -830,7 +824,6 @@ class _ColaFichaCard extends StatelessWidget {
         padding: const EdgeInsets.all(14),
         child: Row(
           children: [
-            // Indicador de nivel o estado
             Container(
               width: 6,
               height: 56,
@@ -873,7 +866,6 @@ class _ColaFichaCard extends StatelessWidget {
                 ],
               ),
             ),
-            // Botón acción
             if (!yaTriajado && ficha.estado == 'ABIERTA')
               Padding(
                 padding: const EdgeInsets.only(left: 8),
