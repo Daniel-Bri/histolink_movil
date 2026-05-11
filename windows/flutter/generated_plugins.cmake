@@ -4,16 +4,14 @@
 
 list(APPEND FLUTTER_PLUGIN_LIST
   flutter_secure_storage_windows
-<<<<<<< HEAD
-=======
   permission_handler_windows
   share_plus
   speech_to_text_windows
->>>>>>> 9cf1fbf (T042 Pantalla reportes movil: filtros simplificados + texto libre + boton de voz con speech_to_text +exportar (CSV, Excel, PDF))
   url_launcher_windows
 )
 
 list(APPEND FLUTTER_FFI_PLUGIN_LIST
+  jni
 )
 
 set(PLUGIN_BUNDLED_LIBRARIES)

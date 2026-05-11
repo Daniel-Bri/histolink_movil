@@ -88,4 +88,13 @@ class TriajeService {
     }
     throw TriajeApiException(_fmtError(res.body), statusCode: res.statusCode);
   }
+
+  /// POST /api/fichas/ — crea una nueva ficha para el paciente
+  Future<FichaModel> crearFicha(int pacienteId) async {
+    final res = await _api.post(_baseFichas, body: {'paciente': pacienteId});
+    if (res.statusCode == 201) {
+      return FichaModel.fromJson(jsonDecode(res.body) as Map<String, dynamic>);
+    }
+    throw TriajeApiException(_fmtError(res.body), statusCode: res.statusCode);
+  }
 }

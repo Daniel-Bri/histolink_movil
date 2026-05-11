@@ -1,17 +1,33 @@
-import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:speech_to_text/speech_to_text.dart' as stt;
 import 'package:permission_handler/permission_handler.dart';
-import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
-import 'package:open_file_plus/open_file_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:histolink/shared/theme/app_colors.dart';
 import 'package:histolink/shared/widgets/app_drawer.dart';
 import 'package:histolink/shared/models/user_model.dart';
 import 'package:histolink/shared/widgets/loading_indicator.dart';
 import '../services/reporte_service.dart';
+
+// Tipos de reporte: display → valor API
+const _kTipos = {
+  'Resumen General': 'resumen_general',
+  'Consultas': 'consultas',
+  'Triajes': 'triajes',
+  'Recetas': 'recetas',
+};
+
+const _kNiveles = ['Todos', 'ROJO', 'NARANJA', 'AMARILLO', 'VERDE', 'AZUL'];
+
+Color _nivelColor(String n) => switch (n.toUpperCase()) {
+      'ROJO'     => const Color(0xFFDC2626),
+      'NARANJA'  => const Color(0xFFEA580C),
+      'AMARILLO' => const Color(0xFFD97706),
+      'VERDE'    => const Color(0xFF16A34A),
+      'AZUL'     => const Color(0xFF2563EB),
+      _          => Colors.grey,
+    };
 
 class ReportesRapidosScreen extends StatefulWidget {
   final UserModel user;
@@ -24,79 +40,59 @@ class ReportesRapidosScreen extends StatefulWidget {
 class _ReportesRapidosScreenState extends State<ReportesRapidosScreen> {
   final _service = ReporteService();
   final _stt = stt.SpeechToText();
-  final _textoLibreCtrl = TextEditingController();
+  final _qCtrl = TextEditingController();
 
-  // Estados de filtros
   String _rangoSeleccionado = 'Hoy';
   DateTime _fechaDesde = DateTime.now();
   DateTime _fechaHasta = DateTime.now();
-  String _tipoReporte = 'Atenciones';
-  String _estado = 'Todos';
+  String _tipoDisplaySelected = 'Resumen General';
+  String _nivelUrgencia = 'Todos';
 
   bool _isListening = false;
   bool _loadingPreview = false;
   bool _exporting = false;
-  List<Map<String, dynamic>> _previewData = [];
-
-  final List<String> _tipos = ['Atenciones', 'Fichas', 'Usuarios', 'Inventario'];
-  final List<String> _estados = ['Todos', 'Pendientes', 'Finalizados', 'Cancelados'];
+  Map<String, dynamic>? _reporteData;
 
   @override
   void initState() {
     super.initState();
     _setRango('Hoy');
     _loadFilters();
-    _checkPermissions();
+  }
+
+  @override
+  void dispose() {
+    _qCtrl.dispose();
+    super.dispose();
   }
 
   Future<void> _loadFilters() async {
     final prefs = await SharedPreferences.getInstance();
     setState(() {
-      _rangoSeleccionado = prefs.getString('report_rango') ?? 'Hoy';
-      _tipoReporte = prefs.getString('report_tipo') ?? 'Atenciones';
-      _estado = prefs.getString('report_estado') ?? 'Todos';
-      _textoLibreCtrl.text = prefs.getString('report_texto') ?? '';
-      
-      if (_rangoSeleccionado != 'Personalizado') {
-        _setRango(_rangoSeleccionado);
+      _rangoSeleccionado    = prefs.getString('rpt_rango') ?? 'Hoy';
+      _tipoDisplaySelected  = prefs.getString('rpt_tipo') ?? 'Resumen General';
+      _nivelUrgencia        = prefs.getString('rpt_nivel') ?? 'Todos';
+      _qCtrl.text           = prefs.getString('rpt_q') ?? '';
+      if (_rangoSeleccionado == 'Personalizado') {
+        final d = prefs.getString('rpt_desde');
+        final h = prefs.getString('rpt_hasta');
+        if (d != null) _fechaDesde = DateTime.parse(d);
+        if (h != null) _fechaHasta = DateTime.parse(h);
       } else {
-        final desde = prefs.getString('report_fecha_desde');
-        final hasta = prefs.getString('report_fecha_hasta');
-        if (desde != null) _fechaDesde = DateTime.parse(desde);
-        if (hasta != null) _fechaHasta = DateTime.parse(hasta);
+        _setRango(_rangoSeleccionado);
       }
     });
   }
 
   Future<void> _saveFilters() async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setString('report_rango', _rangoSeleccionado);
-    await prefs.setString('report_tipo', _tipoReporte);
-    await prefs.setString('report_estado', _estado);
-    await prefs.setString('report_texto', _textoLibreCtrl.text);
+    await prefs.setString('rpt_rango', _rangoSeleccionado);
+    await prefs.setString('rpt_tipo', _tipoDisplaySelected);
+    await prefs.setString('rpt_nivel', _nivelUrgencia);
+    await prefs.setString('rpt_q', _qCtrl.text);
     if (_rangoSeleccionado == 'Personalizado') {
-      await prefs.setString('report_fecha_desde', _fechaDesde.toIso8601String());
-      await prefs.setString('report_fecha_hasta', _fechaHasta.toIso8601String());
-    }
-  }
-
-  void _clearAll() async {
-    setState(() {
-      _textoLibreCtrl.clear();
-      _tipoReporte = 'Atenciones';
-      _estado = 'Todos';
-      _previewData = [];
-      _setRango('Hoy');
-    });
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.clear();
-  }
-
-  void _checkPermissions() {
-    final allowedRoles = ['Administrador', 'Médico', 'Jefe de enfermería', 'Director'];
-    if (!allowedRoles.contains(widget.user.role)) {
-      // En un caso real, esto se manejaría antes de navegar, 
-      // pero aquí mostramos un mensaje por seguridad.
+      await prefs.setString('rpt_desde', _fechaDesde.toIso8601String());
+      await prefs.setString('rpt_hasta', _fechaHasta.toIso8601String());
     }
   }
 
@@ -104,15 +100,18 @@ class _ReportesRapidosScreenState extends State<ReportesRapidosScreen> {
     final now = DateTime.now();
     setState(() {
       _rangoSeleccionado = rango;
-      if (rango == 'Hoy') {
-        _fechaDesde = DateTime(now.year, now.month, now.day);
-        _fechaHasta = now;
-      } else if (rango == 'Esta semana') {
-        _fechaDesde = now.subtract(Duration(days: now.weekday - 1));
-        _fechaHasta = now;
-      } else if (rango == 'Este mes') {
-        _fechaDesde = DateTime(now.year, now.month, 1);
-        _fechaHasta = now;
+      switch (rango) {
+        case 'Hoy':
+          _fechaDesde = DateTime(now.year, now.month, now.day);
+          _fechaHasta = now;
+        case 'Esta semana':
+          _fechaDesde = now.subtract(Duration(days: now.weekday - 1));
+          _fechaHasta = now;
+        case 'Este mes':
+          _fechaDesde = DateTime(now.year, now.month, 1);
+          _fechaHasta = now;
+        default:
+          break;
       }
     });
     if (rango != 'Personalizado') _saveFilters();
@@ -137,25 +136,27 @@ class _ReportesRapidosScreenState extends State<ReportesRapidosScreen> {
 
   Future<void> _listen() async {
     if (!_isListening) {
-      bool available = await _stt.initialize(
-        onStatus: (val) => print('onStatus: $val'),
-        onError: (val) => print('onError: $val'),
+      final available = await _stt.initialize(
+        onStatus: (_) {},
+        onError: (_) {},
       );
       if (available) {
         setState(() => _isListening = true);
         _stt.listen(
-          onResult: (val) => setState(() {
+          onResult: (val) {
             if (val.finalResult) {
-              _textoLibreCtrl.text += ' ${val.recognizedWords}';
-              _isListening = false;
+              setState(() {
+                _qCtrl.text = (_qCtrl.text + ' ${val.recognizedWords}').trim();
+                _isListening = false;
+              });
               _saveFilters();
             }
-          }),
+          },
           localeId: 'es_BO',
         );
       } else {
-        var status = await Permission.microphone.request();
-        if (status.isDenied) {
+        final status = await Permission.microphone.request();
+        if (mounted && status.isDenied) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('Permiso de micrófono denegado')),
           );
@@ -168,80 +169,84 @@ class _ReportesRapidosScreenState extends State<ReportesRapidosScreen> {
   }
 
   Future<void> _aplicarFiltros() async {
-    setState(() => _loadingPreview = true);
+    setState(() {
+      _loadingPreview = true;
+      _reporteData = null;
+    });
     _saveFilters();
     try {
+      final tipoApi = _kTipos[_tipoDisplaySelected] ?? 'resumen_general';
       final data = await _service.previsualizar(
         fechaDesde: DateFormat('yyyy-MM-dd').format(_fechaDesde),
         fechaHasta: DateFormat('yyyy-MM-dd').format(_fechaHasta),
-        tipo: _tipoReporte,
-        estado: _estado,
-        textoLibre: _textoLibreCtrl.text,
+        tipoReporte: tipoApi,
+        nivelUrgencia: _nivelUrgencia == 'Todos' ? null : _nivelUrgencia,
+        q: _qCtrl.text.trim().isEmpty ? null : _qCtrl.text.trim(),
       );
-      setState(() {
-        _previewData = data;
-        _loadingPreview = false;
-      });
+      if (mounted) setState(() => _reporteData = data);
     } catch (e) {
-      setState(() => _loadingPreview = false);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _loadingPreview = false);
     }
   }
 
   Future<void> _exportar(String formato) async {
     setState(() => _exporting = true);
-    _saveFilters();
     try {
+      final tipoApi = _kTipos[_tipoDisplaySelected] ?? 'resumen_general';
       final file = await _service.exportar(
         formato: formato,
         fechaDesde: DateFormat('yyyy-MM-dd').format(_fechaDesde),
         fechaHasta: DateFormat('yyyy-MM-dd').format(_fechaHasta),
-        tipo: _tipoReporte,
-        estado: _estado,
-        textoLibre: _textoLibreCtrl.text,
+        tipoReporte: tipoApi,
+        nivelUrgencia: _nivelUrgencia == 'Todos' ? null : _nivelUrgencia,
+        q: _qCtrl.text.trim().isEmpty ? null : _qCtrl.text.trim(),
       );
-      setState(() => _exporting = false);
-      
-      final result = await OpenFile.open(file.path);
-      if (result.type != ResultType.done) {
-        // Si no se puede abrir, intentar compartir
-        await Share.shareXFiles([XFile(file.path)], text: 'Reporte de $_tipoReporte');
+      if (mounted) {
+        await Share.shareXFiles(
+          [XFile(file.path)],
+          text: 'Reporte de $_tipoDisplaySelected',
+        );
       }
     } catch (e) {
-      setState(() => _exporting = false);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error al exportar: $e'), backgroundColor: Colors.red),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error al exportar: $e'), backgroundColor: Colors.red),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _exporting = false);
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final allowedRoles = ['Administrador', 'Médico', 'Jefe de enfermería', 'Director'];
-    if (!allowedRoles.contains(widget.user.role)) {
-      return Scaffold(
-        drawer: AppDrawer(user: widget.user, activeLabel: 'Reportes Rápidos'),
-        appBar: AppBar(title: const Text('Reportes Rápidos'), backgroundColor: AppColors.azulElectrico, foregroundColor: Colors.white),
-        body: const Center(child: Text('Acceso denegado. No tienes permisos para ver reportes.')),
-      );
-    }
-
     return Scaffold(
       backgroundColor: AppColors.fondo,
       drawer: AppDrawer(user: widget.user, activeLabel: 'Reportes Rápidos'),
       appBar: AppBar(
-        title: const Text('Reportes Rápidos', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+        title: const Text('Reportes de Producción', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 17)),
         backgroundColor: AppColors.azulElectrico,
         foregroundColor: Colors.white,
         actions: [
           IconButton(
-            icon: const Icon(Icons.delete_sweep_outlined),
-            tooltip: 'Limpiar todo',
-            onPressed: _clearAll,
+            icon: const Icon(Icons.refresh_rounded),
+            tooltip: 'Limpiar',
+            onPressed: () {
+              setState(() {
+                _qCtrl.clear();
+                _tipoDisplaySelected = 'Resumen General';
+                _nivelUrgencia = 'Todos';
+                _reporteData = null;
+                _setRango('Hoy');
+              });
+            },
           ),
-          IconButton(icon: const Icon(Icons.help_outline), onPressed: () {}),
         ],
       ),
       body: SingleChildScrollView(
@@ -249,43 +254,33 @@ class _ReportesRapidosScreenState extends State<ReportesRapidosScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _buildSectionTitle('Filtros de Tiempo'),
-            const SizedBox(height: 10),
+            _sectionTitle('Rango de fechas'),
+            const SizedBox(height: 8),
             _buildDateChips(),
-            const SizedBox(height: 10),
-            if (_rangoSeleccionado == 'Personalizado')
+            if (_rangoSeleccionado == 'Personalizado') ...[
+              const SizedBox(height: 8),
               _buildDateDisplay(),
-            
-            const SizedBox(height: 20),
-            _buildSectionTitle('Configuración'),
-            const SizedBox(height: 10),
-            Row(
-              children: [
-                Expanded(child: _buildDropdown('Tipo', _tipoReporte, _tipos, (val) {
-                  setState(() => _tipoReporte = val!);
-                  _saveFilters();
-                })),
-                const SizedBox(width: 12),
-                Expanded(child: _buildDropdown('Estado', _estado, _estados, (val) {
-                  setState(() => _estado = val!);
-                  _saveFilters();
-                })),
-              ],
-            ),
-            
-            const SizedBox(height: 20),
-            _buildSectionTitle('Texto Libre / Búsqueda por Voz'),
-            const SizedBox(height: 10),
+            ],
+            const SizedBox(height: 16),
+            _sectionTitle('Tipo de reporte'),
+            const SizedBox(height: 8),
+            _buildTipoChips(),
+            const SizedBox(height: 16),
+            _sectionTitle('Nivel de urgencia'),
+            const SizedBox(height: 8),
+            _buildNivelDropdown(),
+            const SizedBox(height: 16),
+            _sectionTitle('Búsqueda por texto / voz'),
+            const SizedBox(height: 8),
             _buildSpeechField(),
-            
-            const SizedBox(height: 24),
+            const SizedBox(height: 20),
             SizedBox(
               width: double.infinity,
-              height: 50,
+              height: 48,
               child: ElevatedButton.icon(
                 onPressed: _loadingPreview ? null : _aplicarFiltros,
-                icon: const Icon(Icons.search),
-                label: const Text('Aplicar Filtros y Previsualizar', style: TextStyle(fontWeight: FontWeight.bold)),
+                icon: const Icon(Icons.search_rounded),
+                label: const Text('Aplicar filtros', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.azulElectrico,
                   foregroundColor: Colors.white,
@@ -293,15 +288,13 @@ class _ReportesRapidosScreenState extends State<ReportesRapidosScreen> {
                 ),
               ),
             ),
-            
-            const SizedBox(height: 24),
-            _buildSectionTitle('Previsualización'),
-            const SizedBox(height: 10),
+            const SizedBox(height: 20),
+            _sectionTitle('Resultados'),
+            const SizedBox(height: 8),
             _buildPreviewArea(),
-            
-            const SizedBox(height: 24),
-            _buildSectionTitle('Exportar Reporte'),
-            const SizedBox(height: 12),
+            const SizedBox(height: 20),
+            _sectionTitle('Exportar'),
+            const SizedBox(height: 8),
             _buildExportButtons(),
             const SizedBox(height: 40),
           ],
@@ -310,32 +303,32 @@ class _ReportesRapidosScreenState extends State<ReportesRapidosScreen> {
     );
   }
 
-  Widget _buildSectionTitle(String title) {
-    return Text(
-      title,
-      style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: AppColors.azulElectrico, letterSpacing: 0.5),
-    );
-  }
+  Widget _sectionTitle(String t) => Text(
+        t,
+        style: const TextStyle(
+          fontSize: 13,
+          fontWeight: FontWeight.w700,
+          color: AppColors.azulElectrico,
+          letterSpacing: 0.4,
+        ),
+      );
 
   Widget _buildDateChips() {
-    final ranges = ['Hoy', 'Esta semana', 'Este mes', 'Personalizado'];
+    const ranges = ['Hoy', 'Esta semana', 'Este mes', 'Personalizado'];
     return Wrap(
       spacing: 8,
       children: ranges.map((r) {
-        final selected = _rangoSeleccionado == r;
+        final sel = _rangoSeleccionado == r;
         return ChoiceChip(
-          label: Text(r, style: TextStyle(color: selected ? Colors.white : Colors.black87, fontSize: 12)),
-          selected: selected,
-          onSelected: (val) {
-            if (r == 'Personalizado') {
-              _pickDateRange();
-            } else {
-              _setRango(r);
-            }
-          },
+          label: Text(r, style: TextStyle(fontSize: 12, color: sel ? Colors.white : Colors.black87)),
+          selected: sel,
           selectedColor: AppColors.azulElectrico,
           backgroundColor: Colors.white,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20), side: BorderSide(color: Colors.grey.shade300)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+            side: BorderSide(color: Colors.grey.shade300),
+          ),
+          onSelected: (_) => r == 'Personalizado' ? _pickDateRange() : _setRango(r),
         );
       }).toList(),
     );
@@ -343,11 +336,15 @@ class _ReportesRapidosScreenState extends State<ReportesRapidosScreen> {
 
   Widget _buildDateDisplay() {
     return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(10), border: Border.all(color: AppColors.azulCielo)),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: AppColors.azulCielo),
+      ),
       child: Row(
         children: [
-          const Icon(Icons.date_range, size: 18, color: AppColors.azulElectrico),
+          const Icon(Icons.date_range_rounded, size: 18, color: AppColors.azulElectrico),
           const SizedBox(width: 10),
           Text(
             '${DateFormat('dd/MM/yyyy').format(_fechaDesde)} — ${DateFormat('dd/MM/yyyy').format(_fechaHasta)}',
@@ -358,25 +355,70 @@ class _ReportesRapidosScreenState extends State<ReportesRapidosScreen> {
     );
   }
 
-  Widget _buildDropdown(String label, String value, List<String> items, ValueChanged<String?> onChanged) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(label, style: TextStyle(fontSize: 12, color: Colors.grey.shade600)),
-        const SizedBox(height: 6),
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12),
-          decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(10), border: Border.all(color: Colors.grey.shade300)),
-          child: DropdownButtonHideUnderline(
-            child: DropdownButton<String>(
-              value: value,
-              isExpanded: true,
-              items: items.map((e) => DropdownMenuItem(value: e, child: Text(e, style: const TextStyle(fontSize: 13)))).toList(),
-              onChanged: onChanged,
-            ),
+  Widget _buildTipoChips() {
+    return Wrap(
+      spacing: 8,
+      runSpacing: 6,
+      children: _kTipos.keys.map((display) {
+        final sel = _tipoDisplaySelected == display;
+        return ChoiceChip(
+          label: Text(display, style: TextStyle(fontSize: 12, color: sel ? Colors.white : Colors.black87)),
+          selected: sel,
+          selectedColor: AppColors.mentaVibrante,
+          backgroundColor: Colors.white,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+            side: BorderSide(color: Colors.grey.shade300),
           ),
+          onSelected: (_) => setState(() {
+            _tipoDisplaySelected = display;
+            _saveFilters();
+          }),
+        );
+      }).toList(),
+    );
+  }
+
+  Widget _buildNivelDropdown() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: Colors.grey.shade300),
+      ),
+      child: DropdownButtonHideUnderline(
+        child: DropdownButton<String>(
+          value: _nivelUrgencia,
+          isExpanded: true,
+          items: _kNiveles.map((n) {
+            final isColor = n != 'Todos';
+            return DropdownMenuItem(
+              value: n,
+              child: Row(
+                children: [
+                  if (isColor) ...[
+                    Container(
+                      width: 12,
+                      height: 12,
+                      decoration: BoxDecoration(
+                        color: _nivelColor(n),
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                  ],
+                  Text(n, style: const TextStyle(fontSize: 13)),
+                ],
+              ),
+            );
+          }).toList(),
+          onChanged: (v) => setState(() {
+            _nivelUrgencia = v!;
+            _saveFilters();
+          }),
         ),
-      ],
+      ),
     );
   }
 
@@ -384,78 +426,185 @@ class _ReportesRapidosScreenState extends State<ReportesRapidosScreen> {
     return Column(
       children: [
         TextField(
-          controller: _textoLibreCtrl,
-          maxLines: 3,
-          style: const TextStyle(fontSize: 14),
+          controller: _qCtrl,
+          maxLines: 2,
+          style: const TextStyle(fontSize: 13),
           decoration: InputDecoration(
-            hintText: "Escribe o usa el micrófono para describir lo que necesitas...",
-            hintStyle: TextStyle(color: Colors.grey.shade400, fontSize: 13),
+            hintText: 'Escribe o usa el micrófono…',
+            hintStyle: TextStyle(color: Colors.grey.shade400, fontSize: 12),
             filled: true,
             fillColor: Colors.white,
-            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.grey.shade300)),
-            enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.grey.shade300)),
-          ),
-        ),
-        const SizedBox(height: 10),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.end,
-          children: [
-            if (_isListening)
-              const Expanded(child: Text('Escuchando...', style: TextStyle(color: AppColors.mentaVibrante, fontWeight: FontWeight.bold))),
-            GestureDetector(
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: Colors.grey.shade300)),
+            enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: Colors.grey.shade300)),
+            suffixIcon: GestureDetector(
               onTap: _listen,
               child: Container(
-                padding: const EdgeInsets.all(12),
+                margin: const EdgeInsets.all(6),
                 decoration: BoxDecoration(
                   color: _isListening ? Colors.red : AppColors.mentaVibrante,
                   shape: BoxShape.circle,
-                  boxShadow: [BoxShadow(color: (_isListening ? Colors.red : AppColors.mentaVibrante).withOpacity(0.3), blurRadius: 8, offset: const Offset(0, 3))],
                 ),
-                child: Icon(_isListening ? Icons.stop : Icons.mic, color: Colors.white),
+                child: Icon(_isListening ? Icons.stop_rounded : Icons.mic_rounded, color: Colors.white, size: 20),
               ),
             ),
-          ],
+          ),
         ),
+        if (_isListening)
+          Padding(
+            padding: const EdgeInsets.only(top: 4),
+            child: Row(
+              children: [
+                const SizedBox(width: 4),
+                Container(width: 8, height: 8, decoration: const BoxDecoration(color: Colors.red, shape: BoxShape.circle)),
+                const SizedBox(width: 6),
+                Text('Escuchando...', style: TextStyle(color: Colors.red.shade700, fontSize: 12, fontWeight: FontWeight.w600)),
+              ],
+            ),
+          ),
       ],
     );
   }
 
   Widget _buildPreviewArea() {
     if (_loadingPreview) {
-      return const Center(child: Padding(padding: EdgeInsets.all(20), child: LoadingIndicator(message: 'Cargando datos...')));
+      return const Center(child: Padding(padding: EdgeInsets.all(20), child: LoadingIndicator(message: 'Cargando reporte...')));
     }
-    if (_previewData.isEmpty) {
+
+    if (_reporteData == null) {
       return Container(
         width: double.infinity,
-        padding: const EdgeInsets.all(32),
-        decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12), border: Border.all(color: Colors.grey.shade200)),
+        padding: const EdgeInsets.all(28),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: Colors.grey.shade200),
+        ),
         child: Column(
           children: [
-            Icon(Icons.table_chart_outlined, size: 48, color: Colors.grey.shade300),
-            const SizedBox(height: 12),
-            Text('No hay datos para mostrar', style: TextStyle(color: Colors.grey.shade500, fontSize: 13)),
+            Icon(Icons.bar_chart_rounded, size: 48, color: Colors.grey.shade300),
+            const SizedBox(height: 10),
+            Text('Aplica filtros para ver el reporte', style: TextStyle(color: Colors.grey.shade500, fontSize: 13)),
           ],
         ),
       );
     }
 
-    return Container(
-      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12), border: Border.all(color: Colors.grey.shade200)),
-      child: Column(
-        children: [
-          ..._previewData.take(5).map((row) => ListTile(
-            dense: true,
-            title: Text(row.values.first.toString(), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-            subtitle: Text(row.values.skip(1).take(2).join(' — '), style: TextStyle(fontSize: 11, color: Colors.grey.shade600)),
-            trailing: const Icon(Icons.chevron_right, size: 16, color: Colors.grey),
-          )),
-          if (_previewData.length > 5)
+    final resumen = _reporteData!['resumen'] as Map<String, dynamic>? ?? {};
+    final advertencias = (_reporteData!['advertencias'] as List?)?.cast<String>() ?? [];
+    final triajes = (_reporteData!['triajes_por_nivel'] as List?)?.cast<Map<String, dynamic>>() ?? [];
+    final detalle = (_reporteData!['detalle'] as List?)?.cast<Map<String, dynamic>>() ?? [];
+    final periodo = _reporteData!['periodo'] as Map<String, dynamic>? ?? {};
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Advertencias
+        ...advertencias.map(
+          (a) => Container(
+            margin: const EdgeInsets.only(bottom: 8),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            decoration: BoxDecoration(
+              color: const Color(0xFFFEF3C7),
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: const Color(0xFFFCD34D)),
+            ),
+            child: Row(
+              children: [
+                const Icon(Icons.info_outline_rounded, color: Color(0xFFD97706), size: 16),
+                const SizedBox(width: 8),
+                Expanded(child: Text(a, style: const TextStyle(fontSize: 12, color: Color(0xFF92400E)))),
+              ],
+            ),
+          ),
+        ),
+
+        // Período
+        if (periodo['desde'] != null)
+          Padding(
+            padding: const EdgeInsets.only(bottom: 10),
+            child: Text(
+              'Período: ${periodo['desde']} → ${periodo['hasta']}',
+              style: TextStyle(fontSize: 11, color: Colors.grey.shade600),
+            ),
+          ),
+
+        // Tarjetas resumen
+        GridView.count(
+          crossAxisCount: 2,
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          mainAxisSpacing: 8,
+          crossAxisSpacing: 8,
+          childAspectRatio: 2.2,
+          children: [
+            _ResumenCard('Consultas', resumen['total_consultas'] ?? 0, Icons.assignment_outlined, AppColors.azulElectrico),
+            _ResumenCard('Triajes', resumen['total_triajes'] ?? 0, Icons.monitor_heart_outlined, const Color(0xFF7C3AED)),
+            _ResumenCard('Recetas emitidas', resumen['total_recetas_emitidas'] ?? 0, Icons.medication_outlined, Colors.green.shade700),
+            _ResumenCard('Derivaciones', '${resumen['tasa_derivacion_pct'] ?? 0}%', Icons.call_missed_outgoing_rounded, Colors.orange.shade700),
+          ],
+        ),
+
+        // Triajes por nivel
+        if (triajes.isNotEmpty) ...[
+          const SizedBox(height: 14),
+          Text('Triajes por nivel', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: Colors.grey.shade700)),
+          const SizedBox(height: 6),
+          ...triajes.where((t) => (t['total'] as int? ?? 0) > 0).map(
+            (t) {
+              final nivel  = t['nivel_urgencia'] as String? ?? '';
+              final total  = t['total'] as int? ?? 0;
+              final pct    = (t['porcentaje'] as num?)?.toDouble() ?? 0.0;
+              final color  = _nivelColor(nivel);
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 6),
+                child: Row(
+                  children: [
+                    Container(width: 10, height: 10, decoration: BoxDecoration(color: color, shape: BoxShape.circle)),
+                    const SizedBox(width: 8),
+                    Text(nivel, style: TextStyle(fontSize: 12, color: color, fontWeight: FontWeight.w600), overflow: TextOverflow.ellipsis),
+                    const Spacer(),
+                    Text('$total ($pct%)', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500)),
+                  ],
+                ),
+              );
+            },
+          ),
+        ],
+
+        // Detalle
+        if (detalle.isNotEmpty) ...[
+          const SizedBox(height: 14),
+          Text('Detalle (${detalle.length} registros)', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: Colors.grey.shade700)),
+          const SizedBox(height: 6),
+          Container(
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(color: Colors.grey.shade200),
+            ),
+            child: Column(
+              children: detalle.take(8).map((row) {
+                final paciente = row['paciente'] as String? ?? '';
+                final fecha    = row['fecha_consulta'] ?? row['fecha'] ?? row['fecha_emision'] ?? '';
+                final subtexto = row['medico'] as String? ?? row['nivel_urgencia'] as String? ?? row['estado'] as String? ?? '';
+                return ListTile(
+                  dense: true,
+                  title: Text(paciente.isNotEmpty ? paciente : (row.values.firstOrNull?.toString() ?? ''), style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600), overflow: TextOverflow.ellipsis),
+                  subtitle: Text(subtexto.isNotEmpty ? subtexto : fecha.toString(), style: TextStyle(fontSize: 11, color: Colors.grey.shade600)),
+                  trailing: fecha.isNotEmpty && subtexto.isNotEmpty
+                      ? Text(fecha.toString().substring(0, fecha.toString().length.clamp(0, 10)), style: TextStyle(fontSize: 10, color: Colors.grey.shade500))
+                      : null,
+                );
+              }).toList(),
+            ),
+          ),
+          if (detalle.length > 8)
             Padding(
-              padding: const EdgeInsets.all(12),
-              child: Text('Mostrando 5 de ${_previewData.length} registros', style: TextStyle(fontSize: 11, color: Colors.grey.shade500, fontStyle: FontStyle.italic)),
+              padding: const EdgeInsets.only(top: 6),
+              child: Text('Exporta para ver todos los ${detalle.length} registros', style: TextStyle(fontSize: 11, color: Colors.grey.shade500, fontStyle: FontStyle.italic)),
             ),
         ],
-      ),
+      ],
     );
   }
 
@@ -475,6 +624,43 @@ class _ReportesRapidosScreenState extends State<ReportesRapidosScreen> {
   }
 }
 
+class _ResumenCard extends StatelessWidget {
+  final String label;
+  final Object value;
+  final IconData icon;
+  final Color color;
+
+  const _ResumenCard(this.label, this.value, this.icon, this.color);
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: Colors.grey.shade200),
+      ),
+      child: Row(
+        children: [
+          Icon(icon, color: color, size: 22),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(value.toString(), style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: color)),
+                Text(label, style: TextStyle(fontSize: 10, color: Colors.grey.shade600), overflow: TextOverflow.ellipsis),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _ExportButton extends StatelessWidget {
   final String label;
   final Color color;
@@ -490,14 +676,14 @@ class _ExportButton extends StatelessWidget {
       style: ElevatedButton.styleFrom(
         backgroundColor: color,
         foregroundColor: Colors.white,
-        padding: const EdgeInsets.symmetric(vertical: 12),
+        padding: const EdgeInsets.symmetric(vertical: 10),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
         elevation: 2,
       ),
       child: Column(
         children: [
           Icon(icon, size: 20),
-          const SizedBox(height: 4),
+          const SizedBox(height: 3),
           Text(label, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
         ],
       ),

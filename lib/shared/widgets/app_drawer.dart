@@ -85,7 +85,7 @@ final _sections = <_NavSection>[
       label: 'Triaje',
       icon: Icons.monitor_heart_outlined,
       roles: ['Médico', 'Enfermera'],
-      screenBuilder: (_) => const RegistroDeTriajeScreen(),
+      screenBuilder: (user) => RegistroDeTriajeScreen(user: user),
     ),
     _NavItem(
       label: 'Solicitud de Estudios',
