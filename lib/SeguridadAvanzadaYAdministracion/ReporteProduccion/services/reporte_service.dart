@@ -9,7 +9,6 @@ class ReporteService {
   final ApiService _api;
   static const _endpoint = '/api/reportes/produccion/';
 
-  /// GET /api/reportes/produccion/ → formato json
   Future<Map<String, dynamic>> previsualizar({
     required String fechaDesde,
     required String fechaHasta,
@@ -17,12 +16,13 @@ class ReporteService {
     String? nivelUrgencia,
     String? q,
   }) async {
-    final params = <String, String>{
+    final params = {
       'fecha_desde': fechaDesde,
       'fecha_hasta': fechaHasta,
       'tipo_reporte': tipoReporte,
-      if (nivelUrgencia != null && nivelUrgencia != 'Todos') 'nivel_urgencia': nivelUrgencia,
-      if (q != null && q.trim().isNotEmpty) 'q': q.trim(),
+      if (nivelUrgencia != null && nivelUrgencia.isNotEmpty && nivelUrgencia != 'Todos')
+        'nivel_urgencia': nivelUrgencia,
+      if (q != null && q.isNotEmpty) 'q': q,
     };
 
     final res = await _api.get(_endpoint, queryParameters: params);
@@ -37,7 +37,6 @@ class ReporteService {
     throw Exception(msg);
   }
 
-  /// GET /api/reportes/produccion/?formato=csv|excel|pdf
   Future<File> exportar({
     required String formato,
     required String fechaDesde,
@@ -46,13 +45,14 @@ class ReporteService {
     String? nivelUrgencia,
     String? q,
   }) async {
-    final params = <String, String>{
+    final params = {
       'fecha_desde': fechaDesde,
       'fecha_hasta': fechaHasta,
       'tipo_reporte': tipoReporte,
       'formato': formato,
-      if (nivelUrgencia != null && nivelUrgencia != 'Todos') 'nivel_urgencia': nivelUrgencia,
-      if (q != null && q.trim().isNotEmpty) 'q': q.trim(),
+      if (nivelUrgencia != null && nivelUrgencia.isNotEmpty && nivelUrgencia != 'Todos')
+        'nivel_urgencia': nivelUrgencia,
+      if (q != null && q.isNotEmpty) 'q': q,
     };
 
     final res = await _api.get(_endpoint, queryParameters: params);
