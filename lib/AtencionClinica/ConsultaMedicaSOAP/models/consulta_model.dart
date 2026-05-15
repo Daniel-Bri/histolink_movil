@@ -30,11 +30,11 @@ class ConsultaMedica {
   });
 
   bool get isEditable => estado == EstadoConsulta.borrador;
-  
-  bool get canComplete => 
-    isEditable && 
-    analisis.trim().isNotEmpty && 
-    diagnosticoPrincipal != null && 
+
+  bool get canComplete =>
+    isEditable &&
+    analisis.trim().isNotEmpty &&
+    diagnosticoPrincipal != null &&
     diagnosticoPrincipal!['codigo'] != null;
 
   factory ConsultaMedica.fromJson(Map<String, dynamic> json) {
@@ -53,8 +53,8 @@ class ConsultaMedica {
       } : null,
       estado: _parseEstado(json['estado']),
       fechaCreacion: DateTime.parse(json['creado_en']),
-      fechaActualizacion: json['actualizado_en'] != null 
-          ? DateTime.parse(json['actualizado_en']) 
+      fechaActualizacion: json['actualizado_en'] != null
+          ? DateTime.parse(json['actualizado_en'])
           : null,
     );
   }

@@ -48,9 +48,9 @@ class _ReportesRapidosScreenState extends State<ReportesRapidosScreen> {
   String _tipoDisplaySelected = 'Resumen General';
   String _nivelUrgencia = 'Todos';
 
-  bool _isListening = false;
+  bool _isListening    = false;
   bool _loadingPreview = false;
-  bool _exporting = false;
+  bool _exporting      = false;
   Map<String, dynamic>? _reporteData;
 
   @override
@@ -69,10 +69,10 @@ class _ReportesRapidosScreenState extends State<ReportesRapidosScreen> {
   Future<void> _loadFilters() async {
     final prefs = await SharedPreferences.getInstance();
     setState(() {
-      _rangoSeleccionado    = prefs.getString('rpt_rango') ?? 'Hoy';
-      _tipoDisplaySelected  = prefs.getString('rpt_tipo') ?? 'Resumen General';
-      _nivelUrgencia        = prefs.getString('rpt_nivel') ?? 'Todos';
-      _qCtrl.text           = prefs.getString('rpt_q') ?? '';
+      _rangoSeleccionado   = prefs.getString('rpt_rango') ?? 'Hoy';
+      _tipoDisplaySelected = prefs.getString('rpt_tipo')  ?? 'Resumen General';
+      _nivelUrgencia       = prefs.getString('rpt_nivel') ?? 'Todos';
+      _qCtrl.text          = prefs.getString('rpt_q')     ?? '';
       if (_rangoSeleccionado == 'Personalizado') {
         final d = prefs.getString('rpt_desde');
         final h = prefs.getString('rpt_hasta');
@@ -87,9 +87,9 @@ class _ReportesRapidosScreenState extends State<ReportesRapidosScreen> {
   Future<void> _saveFilters() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString('rpt_rango', _rangoSeleccionado);
-    await prefs.setString('rpt_tipo', _tipoDisplaySelected);
+    await prefs.setString('rpt_tipo',  _tipoDisplaySelected);
     await prefs.setString('rpt_nivel', _nivelUrgencia);
-    await prefs.setString('rpt_q', _qCtrl.text);
+    await prefs.setString('rpt_q',     _qCtrl.text);
     if (_rangoSeleccionado == 'Personalizado') {
       await prefs.setString('rpt_desde', _fechaDesde.toIso8601String());
       await prefs.setString('rpt_hasta', _fechaHasta.toIso8601String());
@@ -114,7 +114,6 @@ class _ReportesRapidosScreenState extends State<ReportesRapidosScreen> {
           break;
       }
     });
-    if (rango != 'Personalizado') _saveFilters();
   }
 
   Future<void> _pickDateRange() async {
@@ -123,6 +122,12 @@ class _ReportesRapidosScreenState extends State<ReportesRapidosScreen> {
       firstDate: DateTime(2020),
       lastDate: DateTime.now(),
       initialDateRange: DateTimeRange(start: _fechaDesde, end: _fechaHasta),
+      builder: (ctx, child) => Theme(
+        data: Theme.of(ctx).copyWith(
+          colorScheme: const ColorScheme.light(primary: AppColors.azulElectrico),
+        ),
+        child: child!,
+      ),
     );
     if (picked != null) {
       setState(() {
@@ -130,7 +135,6 @@ class _ReportesRapidosScreenState extends State<ReportesRapidosScreen> {
         _fechaDesde = picked.start;
         _fechaHasta = picked.end;
       });
-      _saveFilters();
     }
   }
 
@@ -138,7 +142,7 @@ class _ReportesRapidosScreenState extends State<ReportesRapidosScreen> {
     if (!_isListening) {
       final available = await _stt.initialize(
         onStatus: (_) {},
-        onError: (_) {},
+        onError:  (_) {},
       );
       if (available) {
         setState(() => _isListening = true);
@@ -171,17 +175,17 @@ class _ReportesRapidosScreenState extends State<ReportesRapidosScreen> {
   Future<void> _aplicarFiltros() async {
     setState(() {
       _loadingPreview = true;
-      _reporteData = null;
+      _reporteData    = null;
     });
     _saveFilters();
     try {
       final tipoApi = _kTipos[_tipoDisplaySelected] ?? 'resumen_general';
       final data = await _service.previsualizar(
-        fechaDesde: DateFormat('yyyy-MM-dd').format(_fechaDesde),
-        fechaHasta: DateFormat('yyyy-MM-dd').format(_fechaHasta),
-        tipoReporte: tipoApi,
+        fechaDesde:    DateFormat('yyyy-MM-dd').format(_fechaDesde),
+        fechaHasta:    DateFormat('yyyy-MM-dd').format(_fechaHasta),
+        tipoReporte:   tipoApi,
         nivelUrgencia: _nivelUrgencia == 'Todos' ? null : _nivelUrgencia,
-        q: _qCtrl.text.trim().isEmpty ? null : _qCtrl.text.trim(),
+        q:             _qCtrl.text.trim().isEmpty ? null : _qCtrl.text.trim(),
       );
       if (mounted) setState(() => _reporteData = data);
     } catch (e) {
@@ -200,12 +204,12 @@ class _ReportesRapidosScreenState extends State<ReportesRapidosScreen> {
     try {
       final tipoApi = _kTipos[_tipoDisplaySelected] ?? 'resumen_general';
       final file = await _service.exportar(
-        formato: formato,
-        fechaDesde: DateFormat('yyyy-MM-dd').format(_fechaDesde),
-        fechaHasta: DateFormat('yyyy-MM-dd').format(_fechaHasta),
-        tipoReporte: tipoApi,
+        formato:       formato,
+        fechaDesde:    DateFormat('yyyy-MM-dd').format(_fechaDesde),
+        fechaHasta:    DateFormat('yyyy-MM-dd').format(_fechaHasta),
+        tipoReporte:   tipoApi,
         nivelUrgencia: _nivelUrgencia == 'Todos' ? null : _nivelUrgencia,
-        q: _qCtrl.text.trim().isEmpty ? null : _qCtrl.text.trim(),
+        q:             _qCtrl.text.trim().isEmpty ? null : _qCtrl.text.trim(),
       );
       if (mounted) {
         await Share.shareXFiles(
@@ -228,7 +232,7 @@ class _ReportesRapidosScreenState extends State<ReportesRapidosScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.fondo,
-      drawer: AppDrawer(user: widget.user, activeLabel: 'Reportes Rápidos'),
+      drawer: AppDrawer(user: widget.user, activeLabel: 'Reportes'),
       appBar: AppBar(
         title: const Text('Reportes de Producción', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 17)),
         backgroundColor: AppColors.azulElectrico,
@@ -241,8 +245,8 @@ class _ReportesRapidosScreenState extends State<ReportesRapidosScreen> {
               setState(() {
                 _qCtrl.clear();
                 _tipoDisplaySelected = 'Resumen General';
-                _nivelUrgencia = 'Todos';
-                _reporteData = null;
+                _nivelUrgencia       = 'Todos';
+                _reporteData         = null;
                 _setRango('Hoy');
               });
             },
@@ -283,7 +287,6 @@ class _ReportesRapidosScreenState extends State<ReportesRapidosScreen> {
                 label: const Text('Aplicar filtros', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.azulElectrico,
-                  foregroundColor: Colors.white,
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 ),
               ),
@@ -401,10 +404,7 @@ class _ReportesRapidosScreenState extends State<ReportesRapidosScreen> {
                     Container(
                       width: 12,
                       height: 12,
-                      decoration: BoxDecoration(
-                        color: _nivelColor(n),
-                        shape: BoxShape.circle,
-                      ),
+                      decoration: BoxDecoration(color: _nivelColor(n), shape: BoxShape.circle),
                     ),
                     const SizedBox(width: 8),
                   ],
@@ -489,16 +489,15 @@ class _ReportesRapidosScreenState extends State<ReportesRapidosScreen> {
       );
     }
 
-    final resumen = _reporteData!['resumen'] as Map<String, dynamic>? ?? {};
-    final advertencias = (_reporteData!['advertencias'] as List?)?.cast<String>() ?? [];
-    final triajes = (_reporteData!['triajes_por_nivel'] as List?)?.cast<Map<String, dynamic>>() ?? [];
-    final detalle = (_reporteData!['detalle'] as List?)?.cast<Map<String, dynamic>>() ?? [];
-    final periodo = _reporteData!['periodo'] as Map<String, dynamic>? ?? {};
+    final resumen      = _reporteData!['resumen']          as Map<String, dynamic>? ?? {};
+    final advertencias = (_reporteData!['advertencias']    as List?)?.cast<String>() ?? [];
+    final triajes      = (_reporteData!['triajes_por_nivel'] as List?)?.cast<Map<String, dynamic>>() ?? [];
+    final detalle      = (_reporteData!['detalle']         as List?)?.cast<Map<String, dynamic>>() ?? [];
+    final periodo      = _reporteData!['periodo']          as Map<String, dynamic>? ?? {};
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Advertencias
         ...advertencias.map(
           (a) => Container(
             margin: const EdgeInsets.only(bottom: 8),
@@ -518,7 +517,6 @@ class _ReportesRapidosScreenState extends State<ReportesRapidosScreen> {
           ),
         ),
 
-        // Período
         if (periodo['desde'] != null)
           Padding(
             padding: const EdgeInsets.only(bottom: 10),
@@ -528,7 +526,6 @@ class _ReportesRapidosScreenState extends State<ReportesRapidosScreen> {
             ),
           ),
 
-        // Tarjetas resumen
         GridView.count(
           crossAxisCount: 2,
           shrinkWrap: true,
@@ -544,17 +541,16 @@ class _ReportesRapidosScreenState extends State<ReportesRapidosScreen> {
           ],
         ),
 
-        // Triajes por nivel
         if (triajes.isNotEmpty) ...[
           const SizedBox(height: 14),
           Text('Triajes por nivel', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: Colors.grey.shade700)),
           const SizedBox(height: 6),
           ...triajes.where((t) => (t['total'] as int? ?? 0) > 0).map(
             (t) {
-              final nivel  = t['nivel_urgencia'] as String? ?? '';
-              final total  = t['total'] as int? ?? 0;
-              final pct    = (t['porcentaje'] as num?)?.toDouble() ?? 0.0;
-              final color  = _nivelColor(nivel);
+              final nivel = t['nivel_urgencia'] as String? ?? '';
+              final total = t['total'] as int? ?? 0;
+              final pct   = (t['porcentaje'] as num?)?.toDouble() ?? 0.0;
+              final color = _nivelColor(nivel);
               return Padding(
                 padding: const EdgeInsets.only(bottom: 6),
                 child: Row(
@@ -571,7 +567,6 @@ class _ReportesRapidosScreenState extends State<ReportesRapidosScreen> {
           ),
         ],
 
-        // Detalle
         if (detalle.isNotEmpty) ...[
           const SizedBox(height: 14),
           Text('Detalle (${detalle.length} registros)', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: Colors.grey.shade700)),
@@ -614,11 +609,11 @@ class _ReportesRapidosScreenState extends State<ReportesRapidosScreen> {
     }
     return Row(
       children: [
-        Expanded(child: _ExportButton(label: 'CSV', color: Colors.green.shade700, icon: Icons.description_outlined, onTap: () => _exportar('csv'))),
+        Expanded(child: _ExportButton(label: 'CSV',   color: Colors.green.shade700,  icon: Icons.description_outlined,    onTap: () => _exportar('csv'))),
         const SizedBox(width: 8),
-        Expanded(child: _ExportButton(label: 'Excel', color: Colors.blue.shade700, icon: Icons.table_view_outlined, onTap: () => _exportar('excel'))),
+        Expanded(child: _ExportButton(label: 'Excel', color: Colors.blue.shade700,   icon: Icons.table_view_outlined,     onTap: () => _exportar('excel'))),
         const SizedBox(width: 8),
-        Expanded(child: _ExportButton(label: 'PDF', color: Colors.red.shade700, icon: Icons.picture_as_pdf_outlined, onTap: () => _exportar('pdf'))),
+        Expanded(child: _ExportButton(label: 'PDF',   color: Colors.red.shade700,    icon: Icons.picture_as_pdf_outlined, onTap: () => _exportar('pdf'))),
       ],
     );
   }
@@ -662,12 +657,11 @@ class _ResumenCard extends StatelessWidget {
 }
 
 class _ExportButton extends StatelessWidget {
+  const _ExportButton({required this.label, required this.color, required this.icon, required this.onTap});
   final String label;
   final Color color;
   final IconData icon;
   final VoidCallback onTap;
-
-  const _ExportButton({required this.label, required this.color, required this.icon, required this.onTap});
 
   @override
   Widget build(BuildContext context) {

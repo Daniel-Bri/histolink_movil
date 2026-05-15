@@ -107,10 +107,12 @@ class _RegistroDeTriajeScreenState extends State<RegistroDeTriajeScreen> {
     } else {
       _cargarCola();
     }
+    _filtroCtrl.addListener(_onFiltroChangedListener);
   }
 
   @override
   void dispose() {
+    _filtroCtrl.removeListener(_onFiltroChangedListener);
     _filtroCtrl.dispose();
     _filtroTimer?.cancel();
     _motivoCtrl.dispose();
@@ -159,6 +161,8 @@ class _RegistroDeTriajeScreenState extends State<RegistroDeTriajeScreen> {
       f.correlativo.toLowerCase().contains(q)
     ).toList();
   }
+
+  void _onFiltroChangedListener() => _onFiltroChanged(_filtroCtrl.text);
 
   void _onFiltroChanged(String val) {
     _filtroTimer?.cancel();
@@ -298,12 +302,20 @@ class _RegistroDeTriajeScreenState extends State<RegistroDeTriajeScreen> {
                 onPressed: isGuardado ? _volverACola : () {
                   setState(() {
                     _paso = _Paso.cola;
-                    _resultado = null;
+                    _resultado  = null;
                     _nivelFinal = null;
                   });
                 },
               )
             : null,
+        actions: [
+          if (_paso == _Paso.cola)
+            IconButton(
+              icon: const Icon(Icons.refresh_rounded),
+              tooltip: 'Actualizar',
+              onPressed: _cargandoCola ? null : _cargarCola,
+            ),
+        ],
       ),
       floatingActionButton: _paso == _Paso.cola
           ? FloatingActionButton.extended(
@@ -476,9 +488,9 @@ class _RegistroDeTriajeScreenState extends State<RegistroDeTriajeScreen> {
           _SectionHeader('Signos vitales'),
           const SizedBox(height: 10),
           Row(children: [
-            Expanded(child: _VitalField(ctrl: _pesoCtrl,  label: 'Peso (kg)',   hint: '70.5', decimal: true)),
+            Expanded(child: _VitalField(ctrl: _pesoCtrl,  label: 'Peso (kg)',  hint: '70.5', decimal: true)),
             const SizedBox(width: 10),
-            Expanded(child: _VitalField(ctrl: _tallaCtrl, label: 'Talla (cm)',  hint: '165',  decimal: true)),
+            Expanded(child: _VitalField(ctrl: _tallaCtrl, label: 'Talla (cm)', hint: '165',  decimal: true)),
           ]),
           const SizedBox(height: 10),
           Row(children: [
@@ -494,15 +506,15 @@ class _RegistroDeTriajeScreenState extends State<RegistroDeTriajeScreen> {
           ]),
           const SizedBox(height: 10),
           Row(children: [
-            Expanded(child: _VitalField(ctrl: _tempCtrl,    label: 'Temp (°C)',       hint: '36.5', decimal: true)),
+            Expanded(child: _VitalField(ctrl: _tempCtrl,  label: 'Temp (°C)', hint: '36.5', decimal: true)),
             const SizedBox(width: 10),
-            Expanded(child: _VitalField(ctrl: _spo2Ctrl,    label: 'SpO₂ (%)',        hint: '98')),
+            Expanded(child: _VitalField(ctrl: _spo2Ctrl,  label: 'SpO₂ (%)', hint: '98')),
           ]),
           const SizedBox(height: 10),
           Row(children: [
             Expanded(child: _VitalField(ctrl: _glucemiaCtrl, label: 'Glucemia (mg/dL)', hint: '90', decimal: true)),
             const SizedBox(width: 10),
-            Expanded(child: _VitalField(ctrl: _dolorCtrl,    label: 'Dolor EVA 0–10',  hint: '0')),
+            Expanded(child: _VitalField(ctrl: _dolorCtrl, label: 'Dolor EVA 0–10', hint: '0')),
           ]),
           const SizedBox(height: 10),
           _VitalField(ctrl: _glasgowCtrl, label: 'Glasgow (3–15)', hint: '15'),
@@ -921,7 +933,6 @@ class _StatChip extends StatelessWidget {
 class _SectionHeader extends StatelessWidget {
   const _SectionHeader(this.text);
   final String text;
-
   @override
   Widget build(BuildContext context) => Text(
         text,
@@ -931,12 +942,10 @@ class _SectionHeader extends StatelessWidget {
 
 class _VitalField extends StatelessWidget {
   const _VitalField({required this.ctrl, required this.label, required this.hint, this.decimal = false});
-
   final TextEditingController ctrl;
   final String label;
   final String hint;
   final bool decimal;
-
   @override
   Widget build(BuildContext context) => TextFormField(
         controller: ctrl,
@@ -947,6 +956,42 @@ class _VitalField extends StatelessWidget {
         ],
         decoration: InputDecoration(labelText: label, hintText: hint, contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14)),
       );
+}
+
+class _NivelChip extends StatelessWidget {
+  const _NivelChip({required this.nivel, required this.selected, required this.disabled, this.onTap});
+
+  final String nivel;
+  final bool selected;
+  final bool disabled;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final color = _nivelColor(nivel);
+    final label = _kLevelLabel[nivel] ?? nivel;
+
+    return GestureDetector(
+      onTap: disabled ? null : onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 150),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        decoration: BoxDecoration(
+          color: selected ? color : (disabled ? Colors.grey.shade100 : color.withOpacity(0.08)),
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: selected ? color : (disabled ? Colors.grey.shade300 : color.withOpacity(0.4)), width: selected ? 2 : 1),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(_nivelIcon(nivel), size: 16, color: selected ? Colors.white : (disabled ? Colors.grey : color)),
+            const SizedBox(width: 6),
+            Text(label, style: TextStyle(fontSize: 12, fontWeight: selected ? FontWeight.w700 : FontWeight.w500, color: selected ? Colors.white : (disabled ? Colors.grey : color))),
+          ],
+        ),
+      ),
+    );
+  }
 }
 
 class _ResultadoCard extends StatelessWidget {
@@ -961,7 +1006,6 @@ class _ResultadoCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final color = _nivelColor(nivel);
     final label = _kLevelLabel[nivel] ?? nivel;
-
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -1012,42 +1056,6 @@ class _ResultadoCard extends StatelessWidget {
             ),
           ],
         ],
-      ),
-    );
-  }
-}
-
-class _NivelChip extends StatelessWidget {
-  const _NivelChip({required this.nivel, required this.selected, required this.disabled, this.onTap});
-
-  final String nivel;
-  final bool selected;
-  final bool disabled;
-  final VoidCallback? onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final color = _nivelColor(nivel);
-    final label = _kLevelLabel[nivel] ?? nivel;
-
-    return GestureDetector(
-      onTap: disabled ? null : onTap,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 150),
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-        decoration: BoxDecoration(
-          color: selected ? color : (disabled ? Colors.grey.shade100 : color.withOpacity(0.08)),
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(color: selected ? color : (disabled ? Colors.grey.shade300 : color.withOpacity(0.4)), width: selected ? 2 : 1),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(_nivelIcon(nivel), size: 16, color: selected ? Colors.white : (disabled ? Colors.grey : color)),
-            const SizedBox(width: 6),
-            Text(label, style: TextStyle(fontSize: 12, fontWeight: selected ? FontWeight.w700 : FontWeight.w500, color: selected ? Colors.white : (disabled ? Colors.grey : color))),
-          ],
-        ),
       ),
     );
   }

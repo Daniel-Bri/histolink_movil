@@ -29,11 +29,16 @@ class ReporteService {
     if (res.statusCode == 200) {
       return jsonDecode(res.body) as Map<String, dynamic>;
     }
-    throw Exception('Error al obtener reporte (${res.statusCode})');
+    String msg = 'Error ${res.statusCode}';
+    try {
+      final d = jsonDecode(res.body);
+      if (d is Map && d['detail'] != null) msg = d['detail'].toString();
+    } catch (_) {}
+    throw Exception(msg);
   }
 
   Future<File> exportar({
-    required String formato, // 'csv', 'excel', 'pdf'
+    required String formato,
     required String fechaDesde,
     required String fechaHasta,
     String tipoReporte = 'resumen_general',
@@ -52,14 +57,12 @@ class ReporteService {
 
     final res = await _api.get(_endpoint, queryParameters: params);
     if (res.statusCode == 200) {
-      final bytes = res.bodyBytes;
       final tempDir = await getTemporaryDirectory();
-      final timestamp = DateTime.now().millisecondsSinceEpoch;
       final ext = formato == 'excel' ? 'xlsx' : formato;
-      final file = File('${tempDir.path}/reporte_$timestamp.$ext');
-      await file.writeAsBytes(bytes);
+      final file = File('${tempDir.path}/reporte_${DateTime.now().millisecondsSinceEpoch}.$ext');
+      await file.writeAsBytes(res.bodyBytes);
       return file;
     }
-    throw Exception('Error al exportar reporte ($formato): ${res.statusCode}');
+    throw Exception('Error al exportar ($formato): ${res.statusCode}');
   }
 }
