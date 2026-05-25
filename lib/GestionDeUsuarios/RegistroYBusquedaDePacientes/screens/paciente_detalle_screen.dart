@@ -4,6 +4,7 @@ import 'package:histolink/shared/widgets/loading_indicator.dart';
 import 'package:histolink/GestionDeUsuarios/RegistroYBusquedaDePacientes/models/paciente_model.dart';
 import 'package:histolink/GestionDeUsuarios/RegistroYBusquedaDePacientes/services/paciente_service.dart';
 import 'package:histolink/GestionDeUsuarios/VisualizacionDelExpediente/screens/visualizacion_del_expediente_screen.dart';
+import 'package:histolink/IA_Blockchain/PrediccionDeRiesgosClinicos/screens/prediccion_de_riesgos_clinicos_screen.dart';
 
 class PacienteDetalleScreen extends StatefulWidget {
   const PacienteDetalleScreen({super.key, required this.pacienteId});
@@ -174,6 +175,35 @@ class _PacienteDetalleScreenState extends State<PacienteDetalleScreen> {
                                   borderRadius: BorderRadius.circular(12),
                                 ),
                                 elevation: 0,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                          SizedBox(
+                            width: double.infinity,
+                            child: OutlinedButton.icon(
+                              onPressed: () {
+                                Navigator.push<void>(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (_) => PrediccionDeRiesgosClinicosScreen(
+                                      pacienteId: widget.pacienteId,
+                                    ),
+                                  ),
+                                );
+                              },
+                              icon: const Icon(Icons.psychology_rounded),
+                              label: const Text(
+                                'Alertas de Riesgo Clínico (IA)',
+                                style: TextStyle(fontWeight: FontWeight.w600, fontSize: 15),
+                              ),
+                              style: OutlinedButton.styleFrom(
+                                foregroundColor: Colors.purple,
+                                side: const BorderSide(color: Colors.purple),
+                                padding: const EdgeInsets.symmetric(vertical: 14),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
                               ),
                             ),
                           ),
