@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:histolink/GestionDeUsuarios/VisualizacionDelExpediente/models/expediente_resumido_model.dart';
 import 'package:histolink/GestionDeUsuarios/VisualizacionDelExpediente/services/expediente_service.dart';
+import 'package:histolink/SeguridadAvanzadaYAdministracion/BreakGlass_Solicitud/screens/break_glass_solicitud_screen.dart';
 import 'package:histolink/shared/theme/app_colors.dart';
 
 // ── Paleta neutral ────────────────────────────────────────────────────────────
@@ -44,6 +45,7 @@ class _VisualizacionDelExpedienteScreenState
   bool _loading = false;
   String? _error;
   ExpedienteResumido? _exp;
+  bool _openingBreakGlass = false;
 
   bool get _modoDirecto => widget.pacienteId != null;
 
@@ -71,6 +73,28 @@ class _VisualizacionDelExpedienteScreenState
       final exp = await _service.obtenerExpedienteResumido(id);
       if (!mounted) return;
       setState(() => _exp = exp);
+    } on ExpedienteApiException catch (e) {
+      if (e.statusCode == 403 && !_openingBreakGlass) {
+        _openingBreakGlass = true;
+        final pacienteNombre = (e.data?['paciente_nombre'] ?? '').toString();
+        final granted = await Navigator.push<bool>(
+          context,
+          MaterialPageRoute(
+            builder: (_) => BreakGlassSolicitudScreen(
+              pacienteId: id,
+              pacienteNombre: pacienteNombre.isNotEmpty ? pacienteNombre : 'Paciente #$id',
+            ),
+          ),
+        );
+        _openingBreakGlass = false;
+        if (!mounted) return;
+        if (granted == true) {
+          await _cargar();
+          return;
+        }
+      }
+      if (!mounted) return;
+      setState(() { _error = e.message; _exp = null; });
     } catch (e) {
       if (!mounted) return;
       setState(() { _error = e.toString().replaceFirst('Exception: ', ''); _exp = null; });
