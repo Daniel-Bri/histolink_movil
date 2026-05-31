@@ -4,13 +4,28 @@ import 'package:histolink/shared/config/api_config.dart';
 import 'package:histolink/GestionDeUsuarios/LoginYAutenticacion/services/auth_service.dart';
 import 'package:histolink/GestionDeUsuarios/VisualizacionDelExpediente/models/expediente_resumido_model.dart';
 
+class ExpedienteApiException implements Exception {
+  const ExpedienteApiException(
+    this.message, {
+    this.statusCode,
+    this.data,
+  });
+
+  final String message;
+  final int? statusCode;
+  final Map<String, dynamic>? data;
+}
+
 class ExpedienteService {
   final AuthService _authService = AuthService();
 
   Future<ExpedienteResumido> obtenerExpedienteResumido(int pacienteId) async {
     final token = await _authService.getToken();
     if (token == null || token.isEmpty) {
-      throw Exception('Sesión no válida. Vuelve a iniciar sesión.');
+      throw const ExpedienteApiException(
+        'Sesión no válida. Vuelve a iniciar sesión.',
+        statusCode: 401,
+      );
     }
 
     final response = await http.get(
@@ -27,10 +42,11 @@ class ExpedienteService {
       );
     }
 
-    final data = jsonDecode(response.body) as Map<String, dynamic>;
+    final dynamic decoded = jsonDecode(response.body);
+    final data = decoded is Map<String, dynamic> ? decoded : <String, dynamic>{};
     final message =
         (data['error'] ?? data['detail'] ?? 'No se pudo cargar el expediente.')
             .toString();
-    throw Exception(message);
+    throw ExpedienteApiException(message, statusCode: response.statusCode, data: data);
   }
 }

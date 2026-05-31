@@ -22,6 +22,7 @@ class _PacienteListScreenState extends State<PacienteListScreen> {
   bool _loading = false;
   String? _error;
   bool _buscoAlgunaVez = false;
+  bool _soloMisPacientes = true;
 
   @override
   void initState() {
@@ -39,7 +40,10 @@ class _PacienteListScreenState extends State<PacienteListScreen> {
     if (!silent) setState(() => _loading = true);
     _error = null;
     try {
-      final list = await _service.listar(search: _searchCtrl.text.trim().isEmpty ? null : _searchCtrl.text);
+      final list = await _service.listar(
+        search: _searchCtrl.text.trim().isEmpty ? null : _searchCtrl.text,
+        misPacientes: _soloMisPacientes,
+      );
       if (!mounted) return;
       setState(() {
         _items = list;
@@ -101,39 +105,101 @@ class _PacienteListScreenState extends State<PacienteListScreen> {
         children: [
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-            child: Row(
+            child: Column(
               children: [
-                Expanded(
-                  child: TextField(
-                    controller: _searchCtrl,
-                    textInputAction: TextInputAction.search,
-                    onSubmitted: (_) => _buscar(),
-                    decoration: InputDecoration(
-                      hintText: 'CI o nombre / apellido',
-                      prefixIcon: const Icon(Icons.search_rounded, color: AppColors.azulElectrico),
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                Row(
+                  children: [
+                    Expanded(
+                      child: ElevatedButton(
+                        onPressed: _soloMisPacientes
+                            ? null
+                            : () async {
+                                setState(() => _soloMisPacientes = true);
+                                await _cargar();
+                              },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: _soloMisPacientes ? const Color(0xFF0B3BDE) : const Color(0xFFEAF1FF),
+                          foregroundColor: _soloMisPacientes ? Colors.white : const Color(0xFF0B3BDE),
+                          disabledBackgroundColor: const Color(0xFF0B3BDE),
+                          disabledForegroundColor: Colors.white,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        ),
+                        child: const Text('Mis pacientes'),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: ElevatedButton(
+                        onPressed: !_soloMisPacientes
+                            ? null
+                            : () async {
+                                setState(() => _soloMisPacientes = false);
+                                await _cargar();
+                              },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: !_soloMisPacientes ? const Color(0xFFC62828) : const Color(0xFFFFF2F2),
+                          foregroundColor: !_soloMisPacientes ? Colors.white : const Color(0xFFC62828),
+                          disabledBackgroundColor: const Color(0xFFC62828),
+                          disabledForegroundColor: Colors.white,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        ),
+                        child: const Text('Emergencia'),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 10),
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    _soloMisPacientes
+                        ? 'Modo activo: Mis pacientes'
+                        : 'Modo activo: Emergencia (todo el hospital)',
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.grey.shade700,
                     ),
                   ),
                 ),
-                const SizedBox(width: 10),
-                SizedBox(
-                  height: 52,
-                  width: 52,
-                  child: FilledButton(
-                    onPressed: _loading ? null : _buscar,
-                    style: FilledButton.styleFrom(
-                      backgroundColor: AppColors.azulElectrico,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                      padding: EdgeInsets.zero,
+                const SizedBox(height: 10),
+                Row(
+                  children: [
+                    Expanded(
+                      child: TextField(
+                        controller: _searchCtrl,
+                        textInputAction: TextInputAction.search,
+                        onSubmitted: (_) => _buscar(),
+                        decoration: InputDecoration(
+                          hintText: _soloMisPacientes
+                              ? 'Buscar en mis pacientes (CI o nombre)'
+                              : 'Buscar paciente para emergencia (CI o nombre)',
+                          prefixIcon: const Icon(Icons.search_rounded, color: AppColors.azulElectrico),
+                          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                        ),
+                      ),
                     ),
-                    child: _loading
-                        ? const SizedBox(
-                            width: 22,
-                            height: 22,
-                            child: CircularProgressIndicator(strokeWidth: 2.5, color: Colors.white),
-                          )
-                        : const Icon(Icons.search_rounded, size: 26),
-                  ),
+                    const SizedBox(width: 10),
+                    SizedBox(
+                      height: 52,
+                      width: 52,
+                      child: FilledButton(
+                        onPressed: _loading ? null : _buscar,
+                        style: FilledButton.styleFrom(
+                          backgroundColor: AppColors.azulElectrico,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          padding: EdgeInsets.zero,
+                        ),
+                        child: _loading
+                            ? const SizedBox(
+                                width: 22,
+                                height: 22,
+                                child: CircularProgressIndicator(strokeWidth: 2.5, color: Colors.white),
+                              )
+                            : const Icon(Icons.search_rounded, size: 26),
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),
@@ -157,7 +223,9 @@ class _PacienteListScreenState extends State<PacienteListScreen> {
                             Icon(Icons.people_outline_rounded, size: 64, color: Colors.grey.shade400),
                             const SizedBox(height: 16),
                             Text(
-                              _buscoAlgunaVez ? 'Sin resultados' : 'Busca por CI o nombre',
+                              _buscoAlgunaVez
+                                  ? (_soloMisPacientes ? 'Sin pacientes asignados' : 'Sin resultados')
+                                  : 'Busca por CI o nombre',
                               textAlign: TextAlign.center,
                               style: TextStyle(fontSize: 16, color: Colors.grey.shade600, fontWeight: FontWeight.w500),
                             ),
@@ -166,7 +234,9 @@ class _PacienteListScreenState extends State<PacienteListScreen> {
                               padding: const EdgeInsets.symmetric(horizontal: 40),
                               child: Text(
                                 _buscoAlgunaVez
-                                    ? 'Prueba con otros términos o registra un paciente nuevo.'
+                                    ? (_soloMisPacientes
+                                        ? 'Cambia a modo Emergencia para buscar otros pacientes del hospital.'
+                                        : 'Prueba con otros términos o registra un paciente nuevo.')
                                     : 'Escribe en el campo superior y pulsa la lupa, o desliza hacia abajo para cargar el listado.',
                                 textAlign: TextAlign.center,
                                 style: TextStyle(fontSize: 13, color: Colors.grey.shade500),

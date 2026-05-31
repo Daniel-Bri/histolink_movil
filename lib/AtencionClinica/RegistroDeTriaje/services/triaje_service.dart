@@ -40,6 +40,19 @@ class TriajeService {
     return 'Error desconocido';
   }
 
+  /// GET /api/fichas/?en_curso=true  — toda la cola de atención
+  Future<List<FichaModel>> listarEnCola() async {
+    final res = await _api.get(_baseFichas, queryParameters: {'en_curso': 'true'});
+    if (res.statusCode == 200) {
+      final decoded = jsonDecode(res.body);
+      final List<dynamic> raw = decoded is Map
+          ? ((decoded['results'] ?? []) as List<dynamic>)
+          : (decoded is List ? decoded : []);
+      return raw.whereType<Map<String, dynamic>>().map(FichaModel.fromJson).toList();
+    }
+    throw TriajeApiException(_fmtError(res.body), statusCode: res.statusCode);
+  }
+
   /// GET /api/fichas/?paciente=<id>&en_curso=true
   Future<List<FichaModel>> listarFichasAbiertas(int pacienteId) async {
     final res = await _api.get(_baseFichas, queryParameters: {
@@ -85,6 +98,15 @@ class TriajeService {
     final res = await _api.post(_baseTriaje, body: data);
     if (res.statusCode == 201) {
       return jsonDecode(res.body) as Map<String, dynamic>;
+    }
+    throw TriajeApiException(_fmtError(res.body), statusCode: res.statusCode);
+  }
+
+  /// POST /api/fichas/ — crea una ficha para un paciente desde el flujo de triaje
+  Future<FichaModel> crearFicha(int pacienteId) async {
+    final res = await _api.post(_baseFichas, body: {'paciente': pacienteId});
+    if (res.statusCode == 200 || res.statusCode == 201) {
+      return FichaModel.fromJson(jsonDecode(res.body) as Map<String, dynamic>);
     }
     throw TriajeApiException(_fmtError(res.body), statusCode: res.statusCode);
   }

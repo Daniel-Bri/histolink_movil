@@ -1,30 +1,36 @@
 import 'package:flutter/material.dart';
 import 'package:histolink/shared/models/user_model.dart';
+import 'package:histolink/shared/screens/error_screen.dart';
 import 'package:histolink/GestionDeUsuarios/LoginYAutenticacion/services/auth_service.dart';
 import 'package:histolink/GestionDeUsuarios/LoginYAutenticacion/screens/login_screen.dart';
 import 'package:histolink/GestionDeUsuarios/RegistroYBusquedaDePacientes/screens/registro_y_busqueda_de_pacientes_screen.dart';
 import 'package:histolink/AtencionClinica/SolicitudDeEstudios/screens/solicitud_de_estudios_screen.dart';
 import 'package:histolink/AtencionClinica/RegistroDeTriaje/screens/registro_de_triaje_screen.dart';
+import 'package:histolink/AtencionClinica/AperturaFichaYColaDeAtencion/screens/apertura_ficha_y_cola_de_atencion_screen.dart';
+import 'package:histolink/AtencionClinica/EmisionDeRecetaMedica/screens/emision_de_receta_medica_screen.dart';
+import 'package:histolink/AtencionClinica/ConsultaMedicaSOAP/screens/consulta_medica_soap_screen.dart';
+import 'package:histolink/SeguridadAvanzadaYAdministracion/ReporteProduccion/screens/reportes_rapidos_screen.dart';
+import 'package:histolink/SeguridadAvanzadaYAdministracion/PanelDeAuditoriaYReportesSNIS/screens/panel_de_auditoria_y_reportes_snis_screen.dart';
 
 // ── Colores del sidebar (mismos que web) ─────────────────────────────────────
 const _bgSidebar = Color(0xFF122268);
-const _divider = Color(0x26FFFFFF); // rgba(255,255,255,0.15)
-const _activeBg = Color(0x3800A896); // rgba(0,168,150,0.22)
+const _divider = Color(0x26FFFFFF);
+const _activeBg = Color(0x3800A896);
 const _activeBorder = Color(0xFF00A896);
-const _hoverBg = Color(0x17FFFFFF); // rgba(255,255,255,0.09)
-const _textHigh = Color(0xE0FFFFFF); // 0.88 opacity
-const _textMid = Color(0xA6FFFFFF); // 0.65 opacity
-const _textLow = Color(0x8CFFFFFF); // 0.55 opacity (soon)
+const _hoverBg = Color(0x17FFFFFF);
+const _textHigh = Color(0xE0FFFFFF);
+const _textMid = Color(0xA6FFFFFF);
+const _textLow = Color(0x8CFFFFFF);
 
-// ── Colores por rol (mismos que web) ─────────────────────────────────────────
+// ── Colores por rol ───────────────────────────────────────────────────────────
 final _rolColors = <String, _RolColor>{
-  'Médico': _RolColor(const Color(0x303B82F6), const Color(0xFF93C5FD)),
-  'Enfermera': _RolColor(const Color(0x3010B981), const Color(0xFF6EE7B7)),
-  'Administrativo': _RolColor(const Color(0x30F59E0B), const Color(0xFFFCD34D)),
-  'Auditor': _RolColor(const Color(0x308B5CF6), const Color(0xFFC4B5FD)),
-  'Director': _RolColor(const Color(0x30EC4899), const Color(0xFFF9A8D4)),
-  'Laboratorio': _RolColor(const Color(0x3006B6D4), const Color(0xFF67E8F9)),
-  'Farmacia': _RolColor(const Color(0x30EAB308), const Color(0xFFFDE68A)),
+  'Médico':        _RolColor(const Color(0x303B82F6), const Color(0xFF93C5FD)),
+  'Enfermera':     _RolColor(const Color(0x3010B981), const Color(0xFF6EE7B7)),
+  'Administrativo':_RolColor(const Color(0x30F59E0B), const Color(0xFFFCD34D)),
+  'Auditor':       _RolColor(const Color(0x308B5CF6), const Color(0xFFC4B5FD)),
+  'Director':      _RolColor(const Color(0x30EC4899), const Color(0xFFF9A8D4)),
+  'Laboratorio':   _RolColor(const Color(0x3006B6D4), const Color(0xFF67E8F9)),
+  'Farmacia':      _RolColor(const Color(0x30EAB308), const Color(0xFFFDE68A)),
 };
 
 class _RolColor {
@@ -39,7 +45,7 @@ class _NavItem {
   final IconData icon;
   final bool soon;
   final List<String> roles;
-  final Widget Function()? screenBuilder;
+  final Widget Function(UserModel)? screenBuilder;
 
   const _NavItem({
     required this.label,
@@ -61,7 +67,7 @@ final _sections = <_NavSection>[
     _NavItem(
       label: 'Pacientes',
       icon: Icons.people_outline_rounded,
-      screenBuilder: () => const RegistroYBusquedaDePacientesScreen(),
+      screenBuilder: (_) => const RegistroYBusquedaDePacientesScreen(),
     ),
     _NavItem(
       label: 'Personal de Salud',
@@ -71,32 +77,63 @@ final _sections = <_NavSection>[
     ),
   ]),
   _NavSection(title: 'Atención Clínica', items: [
-    _NavItem(label: 'Historial Clínico', icon: Icons.assignment_outlined,    soon: true),
-    _NavItem(label: 'Documentos',        icon: Icons.folder_outlined,         soon: true),
-    _NavItem(label: 'Agenda',            icon: Icons.calendar_month_outlined, soon: true),
+    _NavItem(
+      label: 'Fichas del Día',
+      icon: Icons.list_alt_rounded,
+      screenBuilder: (user) => AperturaFichaYColaDeAtencionScreen(user: user),
+    ),
     _NavItem(
       label: 'Triaje',
       icon: Icons.monitor_heart_outlined,
       roles: ['Médico', 'Enfermera'],
-      screenBuilder: () => const RegistroDeTriajeScreen(),
+      screenBuilder: (user) => RegistroDeTriajeScreen(user: user),
+    ),
+    _NavItem(
+      label: 'Consulta SOAP',
+      icon: Icons.medical_services_outlined,
+      roles: ['Médico'],
+      screenBuilder: (_) => const ConsultaMedicaSoapScreen(),
+    ),
+    _NavItem(
+      label: 'Receta Médica',
+      icon: Icons.receipt_long_outlined,
+      roles: ['Médico', 'Farmacia'],
+      screenBuilder: (_) => const EmisionDeRecetaMedicaScreen(),
     ),
     _NavItem(
       label: 'Solicitud de Estudios',
       icon: Icons.science_outlined,
       roles: ['Médico', 'Laboratorio'],
-      screenBuilder: () => const SolicitudDeEstudiosScreen(),
+      screenBuilder: (_) => const SolicitudDeEstudiosScreen(),
     ),
+    _NavItem(label: 'Historial Clínico', icon: Icons.assignment_outlined,    soon: true),
+    _NavItem(label: 'Agenda',            icon: Icons.calendar_month_outlined, soon: true),
   ]),
   _NavSection(title: 'IA + Blockchain', items: [
-    _NavItem(label: 'Clasificación IA', icon: Icons.memory_outlined,       soon: true),
-    _NavItem(label: 'Riesgo Clínico',   icon: Icons.monitor_heart_outlined, soon: true),
-    _NavItem(label: 'Blockchain',       icon: Icons.link_rounded,           soon: true),
+    _NavItem(label: 'Clasificación IA', icon: Icons.memory_outlined,        soon: true),
+    _NavItem(label: 'Riesgo Clínico',   icon: Icons.favorite_border_rounded, soon: true),
+    _NavItem(label: 'Blockchain',       icon: Icons.link_rounded,            soon: true),
   ]),
   _NavSection(title: 'Seguridad y Admin', items: [
-    _NavItem(label: 'Auditoría',      icon: Icons.shield_outlined,   soon: true, roles: ['Auditor', 'Director']),
+    _NavItem(
+      label: 'Reportes',
+      icon: Icons.analytics_outlined,
+      roles: ['Administrador', 'Médico', 'Jefe de enfermería', 'Director'],
+      screenBuilder: (user) => ReportesRapidosScreen(user: user),
+    ),
+    _NavItem(
+      label: 'Auditoría',
+      icon: Icons.shield_outlined,
+      roles: ['Auditor', 'Director', 'Administrativo'],
+      screenBuilder: (user) => PanelDeAuditoriaYReportesSNISScreen(user: user),
+    ),
     _NavItem(label: 'Administración', icon: Icons.settings_outlined, soon: true, roles: ['Administrativo', 'Director']),
   ]),
 ];
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+bool _canAccess(UserModel user, _NavItem item) =>
+    item.roles.isEmpty || item.roles.any((r) => user.groups.contains(r));
 
 // ── Widget principal ──────────────────────────────────────────────────────────
 class AppDrawer extends StatelessWidget {
@@ -108,9 +145,7 @@ class AppDrawer extends StatelessWidget {
   Future<void> _logout(BuildContext context) async {
     try {
       await AuthService().logout();
-    } catch (_) {
-      // Si falla el logout remoto o local, igual navegamos al login
-    }
+    } catch (_) {}
     if (!context.mounted) return;
     Navigator.of(context).pushAndRemoveUntil(
       MaterialPageRoute(builder: (_) => const LoginScreen()),
@@ -121,8 +156,7 @@ class AppDrawer extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final rol = user.role;
-    final rolColor =
-        _rolColors[rol] ??
+    final rolColor = _rolColors[rol] ??
         _RolColor(const Color(0x3094A3B8), const Color(0xFF94A3B8));
 
     return Drawer(
@@ -173,7 +207,7 @@ class AppDrawer extends StatelessWidget {
                         ),
                         Text(
                           user.tenantNombre?.toUpperCase() ?? 'SISTEMA CLÍNICO',
-                          style: TextStyle(
+                          style: const TextStyle(
                             color: _textMid,
                             fontSize: 10,
                             letterSpacing: 0.5,
@@ -202,11 +236,8 @@ class AppDrawer extends StatelessWidget {
                       color: const Color(0x20FFFFFF),
                       borderRadius: BorderRadius.circular(19),
                     ),
-                    child: const Icon(
-                      Icons.person_outline,
-                      color: Colors.white,
-                      size: 20,
-                    ),
+                    child: const Icon(Icons.person_outline,
+                        color: Colors.white, size: 20),
                   ),
                   const SizedBox(width: 10),
                   Expanded(
@@ -231,9 +262,7 @@ class AppDrawer extends StatelessWidget {
                         const SizedBox(height: 7),
                         Container(
                           padding: const EdgeInsets.symmetric(
-                            horizontal: 10,
-                            vertical: 3,
-                          ),
+                              horizontal: 10, vertical: 3),
                           decoration: BoxDecoration(
                             color: rolColor.bg,
                             borderRadius: BorderRadius.circular(20),
@@ -259,15 +288,6 @@ class AppDrawer extends StatelessWidget {
               child: ListView(
                 padding: const EdgeInsets.symmetric(vertical: 6),
                 children: _sections.map((section) {
-                  final visible = section.items
-                      .where(
-                        (item) =>
-                            item.roles.isEmpty ||
-                            item.roles.any((r) => user.groups.contains(r)),
-                      )
-                      .toList();
-                  if (visible.isEmpty) return const SizedBox.shrink();
-
                   return Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -283,22 +303,43 @@ class AppDrawer extends StatelessWidget {
                           ),
                         ),
                       ),
-                      ...visible.map(
-                        (item) => _NavTile(
+                      ...section.items.map((item) {
+                        final hasAccess = _canAccess(user, item);
+
+                        VoidCallback? onTap;
+                        if (item.soon) {
+                          onTap = null;
+                        } else if (!hasAccess) {
+                          onTap = () {
+                            Navigator.of(context).pop();
+                            Navigator.of(context).push(
+                              MaterialPageRoute(
+                                builder: (_) => const ErrorScreen(
+                                  statusCode: 403,
+                                  mensaje:
+                                      'No cuentas con el rol necesario para acceder a esta sección.',
+                                ),
+                              ),
+                            );
+                          };
+                        } else if (item.screenBuilder != null) {
+                          onTap = () {
+                            Navigator.of(context).pop();
+                            Navigator.of(context).push(
+                              MaterialPageRoute(
+                                builder: (_) => item.screenBuilder!(user),
+                              ),
+                            );
+                          };
+                        }
+
+                        return _NavTile(
                           item: item,
                           isActive: activeLabel == item.label,
-                          onTap: item.soon || item.screenBuilder == null
-                              ? null
-                              : () {
-                                  Navigator.of(context).pop();
-                                  Navigator.of(context).push(
-                                    MaterialPageRoute(
-                                      builder: (_) => item.screenBuilder!(),
-                                    ),
-                                  );
-                                },
-                        ),
-                      ),
+                          hasAccess: hasAccess,
+                          onTap: onTap,
+                        );
+                      }),
                     ],
                   );
                 }).toList(),
@@ -330,9 +371,15 @@ class AppDrawer extends StatelessWidget {
 class _NavTile extends StatefulWidget {
   final _NavItem item;
   final bool isActive;
+  final bool hasAccess;
   final VoidCallback? onTap;
 
-  const _NavTile({required this.item, required this.isActive, this.onTap});
+  const _NavTile({
+    required this.item,
+    required this.isActive,
+    required this.hasAccess,
+    this.onTap,
+  });
 
   @override
   State<_NavTile> createState() => _NavTileState();
@@ -345,11 +392,12 @@ class _NavTileState extends State<_NavTile> {
   Widget build(BuildContext context) {
     final active = widget.isActive;
     final soon = widget.item.soon;
+    final hasAccess = widget.hasAccess;
 
     Color textColor;
     if (active) {
       textColor = Colors.white;
-    } else if (soon) {
+    } else if (soon || !hasAccess) {
       textColor = _textLow;
     } else {
       textColor = _textHigh;
@@ -389,27 +437,44 @@ class _NavTileState extends State<_NavTile> {
               ),
             ),
             if (soon)
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
-                decoration: BoxDecoration(
-                  color: const Color(0x1AFFFFFF),
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: const Text(
-                  'Pronto',
-                  style: TextStyle(
-                    color: _textLow,
-                    fontSize: 9,
-                    fontWeight: FontWeight.w700,
-                    letterSpacing: 0.4,
-                  ),
-                ),
+              _Badge(label: 'Pronto', bg: const Color(0x1AFFFFFF), text: _textLow),
+            if (!soon && !hasAccess)
+              _Badge(
+                label: 'Sin acceso',
+                bg: const Color(0x1FEF4444),
+                text: const Color(0xFFFF8080),
               ),
           ],
         ),
       ),
     );
   }
+}
+
+class _Badge extends StatelessWidget {
+  final String label;
+  final Color bg;
+  final Color text;
+
+  const _Badge({required this.label, required this.bg, required this.text});
+
+  @override
+  Widget build(BuildContext context) => Container(
+        padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+        decoration: BoxDecoration(
+          color: bg,
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            color: text,
+            fontSize: 9,
+            fontWeight: FontWeight.w700,
+            letterSpacing: 0.4,
+          ),
+        ),
+      );
 }
 
 // ── Botón inferior ────────────────────────────────────────────────────────────
@@ -450,11 +515,9 @@ class _BottomActionState extends State<_BottomAction> {
         padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
         child: Row(
           children: [
-            Icon(
-              widget.icon,
-              size: 16,
-              color: _pressed ? widget.activeColor : widget.color,
-            ),
+            Icon(widget.icon,
+                size: 16,
+                color: _pressed ? widget.activeColor : widget.color),
             const SizedBox(width: 10),
             Text(
               widget.label,

@@ -57,10 +57,11 @@ class PacienteService {
   }
 
   /// Lista o busca pacientes. Si [search] está vacío, pide el listado sin filtro.
-  Future<List<PacienteModel>> listar({String? search}) async {
+  Future<List<PacienteModel>> listar({String? search, bool misPacientes = false}) async {
     final query = <String, String>{};
     final s = search?.trim();
     if (s != null && s.isNotEmpty) query['search'] = s;
+    if (misPacientes) query['mis_pacientes'] = 'true';
 
     final res = await _api.get(_base, queryParameters: query.isEmpty ? null : query);
     if (res.statusCode == 200) {
