@@ -8,6 +8,9 @@ import 'package:histolink/AtencionClinica/RegistroDeTriaje/screens/registro_de_t
 import 'package:histolink/AtencionClinica/AperturaFichaYColaDeAtencion/screens/apertura_ficha_y_cola_de_atencion_screen.dart';
 import 'package:histolink/SeguridadAvanzadaYAdministracion/ReporteProduccion/screens/reportes_rapidos_screen.dart';
 
+import 'package:histolink/IA_Blockchain/ConfiguracionDeConsentimiento/screens/emergency_consent_screen.dart';
+import 'package:histolink/IA_Blockchain/ConfiguracionDeConsentimiento/screens/configuracion_de_consentimiento_screen.dart';
+
 // ── Colores del sidebar (mismos que web) ─────────────────────────────────────
 const _bgSidebar = Color(0xFF122268);
 const _divider = Color(0x26FFFFFF); // rgba(255,255,255,0.15)
@@ -95,6 +98,11 @@ final _sections = <_NavSection>[
     ),
   ]),
   _NavSection(title: 'IA + Blockchain', items: [
+    _NavItem(
+      label: 'Gestión Consentimientos',
+      icon: Icons.assignment_turned_in_rounded,
+      screenBuilder: (_) => const ConfiguracionDeConsentimientoScreen(),
+    ),
     _NavItem(label: 'Clasificación IA', icon: Icons.memory_outlined,       soon: true),
     _NavItem(label: 'Riesgo Clínico',   icon: Icons.monitor_heart_outlined, soon: true),
     _NavItem(label: 'Blockchain',       icon: Icons.link_rounded,           soon: true),
