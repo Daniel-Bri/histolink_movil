@@ -5,6 +5,7 @@ import 'package:histolink/shared/widgets/app_drawer.dart';
 import 'package:histolink/GestionDeUsuarios/LoginYAutenticacion/services/auth_service.dart';
 import 'package:histolink/GestionDeUsuarios/LoginYAutenticacion/screens/login_screen.dart';
 import 'package:histolink/GestionDeUsuarios/RegistroYBusquedaDePacientes/screens/registro_y_busqueda_de_pacientes_screen.dart';
+import 'package:histolink/AtencionClinica/AperturaFichaYColaDeAtencion/screens/apertura_ficha_y_cola_de_atencion_screen.dart';
 
 class DashboardScreen extends StatelessWidget {
   final UserModel user;
@@ -219,11 +220,19 @@ class DashboardScreen extends StatelessWidget {
                     );
                   },
                 ),
-                const _MenuCard(
+                _MenuCard(
                   icon: Icons.assignment_outlined,
                   label: 'Consultas',
                   iconColor: AppColors.mentaVibrante,
                   bgColor: AppColors.mentaSuave,
+                  onTap: () {
+                    Navigator.push<void>(
+                      context,
+                      MaterialPageRoute<void>(
+                        builder: (_) => AperturaFichaYColaDeAtencionScreen(user: user),
+                      ),
+                    );
+                  },
                 ),
                 const _MenuCard(
                   icon: Icons.science_outlined,
