@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:histolink/GestionDeUsuarios/VisualizacionDelExpediente/models/expediente_resumido_model.dart';
 import 'package:histolink/GestionDeUsuarios/VisualizacionDelExpediente/services/expediente_service.dart';
+import 'package:histolink/IA_Blockchain/VerificacionDeIntegridadDocumentos/screens/verificacion_de_integridad_screen.dart';
 import 'package:histolink/SeguridadAvanzadaYAdministracion/BreakGlass_Solicitud/screens/break_glass_solicitud_screen.dart';
 import 'package:histolink/shared/theme/app_colors.dart';
 
@@ -416,6 +417,33 @@ class _ConsultaItem extends StatelessWidget {
           const Text('Diagnóstico', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: _labelText)),
           const SizedBox(height: 2),
           Text(c.impresionDiagnostica, style: const TextStyle(fontSize: 13, color: _bodyText, height: 1.4)),
+        ],
+        if (c.esFirmada) ...[
+          const SizedBox(height: 10),
+          const Divider(height: 1, color: _border),
+          const SizedBox(height: 8),
+          SizedBox(
+            width: double.infinity,
+            child: OutlinedButton.icon(
+              onPressed: () => Navigator.push(
+                context,
+                MaterialPageRoute<void>(
+                  builder: (_) => VerificacionDeIntegridadScreen(
+                    consultaId: c.id,
+                    tituloConsulta: 'Consulta del ${_fechaHora(c.creadoEn)}',
+                  ),
+                ),
+              ),
+              icon: const Icon(Icons.verified_outlined, size: 16),
+              label: const Text('Verificar documento', style: TextStyle(fontSize: 13)),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: AppColors.azulElectrico,
+                side: const BorderSide(color: AppColors.azulElectrico),
+                padding: const EdgeInsets.symmetric(vertical: 8),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+              ),
+            ),
+          ),
         ],
       ]),
     );

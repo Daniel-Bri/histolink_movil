@@ -42,20 +42,28 @@ class TriajeResumen {
 }
 
 class ConsultaResumen {
+  final int id;
+  final String estado;
   final String creadoEn;
   final String estadoLabel;
   final String motivoConsulta;
   final String impresionDiagnostica;
 
   const ConsultaResumen({
+    required this.id,
+    required this.estado,
     required this.creadoEn,
     required this.estadoLabel,
     required this.motivoConsulta,
     required this.impresionDiagnostica,
   });
 
+  bool get esFirmada => estado == 'FIRMADA';
+
   factory ConsultaResumen.fromJson(Map<String, dynamic> json) {
     return ConsultaResumen(
+      id: (json['id'] ?? 0) as int,
+      estado: (json['estado'] ?? '').toString(),
       creadoEn: (json['creado_en'] ?? '').toString(),
       estadoLabel: (json['estado_label'] ?? json['estado'] ?? '').toString(),
       motivoConsulta: (json['motivo_consulta'] ?? '').toString(),
