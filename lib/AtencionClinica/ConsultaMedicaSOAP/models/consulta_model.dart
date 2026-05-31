@@ -67,6 +67,36 @@ class ConsultaMedica {
     }
   }
 
+  ConsultaMedica copyWith({
+    int? id,
+    int? pacienteId,
+    String? pacienteNombre,
+    int? triajeId,
+    String? subjetivo,
+    String? objetivo,
+    String? analisis,
+    String? plan,
+    Map<String, dynamic>? diagnosticoPrincipal,
+    EstadoConsulta? estado,
+    DateTime? fechaCreacion,
+    DateTime? fechaActualizacion,
+  }) {
+    return ConsultaMedica(
+      id: id ?? this.id,
+      pacienteId: pacienteId ?? this.pacienteId,
+      pacienteNombre: pacienteNombre ?? this.pacienteNombre,
+      triajeId: triajeId ?? this.triajeId,
+      subjetivo: subjetivo ?? this.subjetivo,
+      objetivo: objetivo ?? this.objetivo,
+      analisis: analisis ?? this.analisis,
+      plan: plan ?? this.plan,
+      diagnosticoPrincipal: diagnosticoPrincipal ?? this.diagnosticoPrincipal,
+      estado: estado ?? this.estado,
+      fechaCreacion: fechaCreacion ?? this.fechaCreacion,
+      fechaActualizacion: fechaActualizacion ?? this.fechaActualizacion,
+    );
+  }
+
   Map<String, dynamic> toJson() {
     return {
       'motivo_consulta': subjetivo,

@@ -85,7 +85,7 @@ class _AperturaFichaYColaDeAtencionScreenState
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (_) => _CrearFichaSheet(service: _service),
+      builder: (_) => _CrearFichaSheet(service: _service, medicoId: widget.user.id),
     );
     if (creada == true) _fetchFichas();
   }
@@ -416,7 +416,8 @@ class _FichaCard extends StatelessWidget {
 // ── Bottom sheet: Crear nueva ficha ──────────────────────────────────────────
 class _CrearFichaSheet extends StatefulWidget {
   final FichaService service;
-  const _CrearFichaSheet({required this.service});
+  final int medicoId;
+  const _CrearFichaSheet({required this.service, required this.medicoId});
 
   @override
   State<_CrearFichaSheet> createState() => _CrearFichaSheetState();
@@ -478,6 +479,7 @@ class _CrearFichaSheetState extends State<_CrearFichaSheet> {
     try {
       await widget.service.crearFicha(
         pacienteId: _pacienteSeleccionado!.id,
+        medicoId: widget.medicoId,
         motivoConsulta: _motivoCtrl.text,
       );
       if (mounted) Navigator.of(context).pop(true);
