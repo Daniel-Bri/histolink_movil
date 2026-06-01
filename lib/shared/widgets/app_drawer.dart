@@ -12,7 +12,6 @@ import 'package:histolink/AtencionClinica/ConsultaMedicaSOAP/screens/consulta_me
 import 'package:histolink/SeguridadAvanzadaYAdministracion/ReporteProduccion/screens/reportes_rapidos_screen.dart';
 import 'package:histolink/SeguridadAvanzadaYAdministracion/PanelDeAuditoriaYReportesSNIS/screens/panel_de_auditoria_y_reportes_snis_screen.dart';
 
-import 'package:histolink/IA_Blockchain/ConfiguracionDeConsentimiento/screens/emergency_consent_screen.dart';
 import 'package:histolink/IA_Blockchain/ConfiguracionDeConsentimiento/screens/configuracion_de_consentimiento_screen.dart';
 
 // ── Colores del sidebar (mismos que web) ─────────────────────────────────────
