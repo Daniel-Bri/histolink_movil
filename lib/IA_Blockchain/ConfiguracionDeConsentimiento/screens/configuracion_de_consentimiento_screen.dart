@@ -91,22 +91,20 @@ class _ConfiguracionDeConsentimientoScreenState extends State<ConfiguracionDeCon
           columnSpacing: 24,
           columns: const [
             DataColumn(label: Text('Paciente', style: TextStyle(fontWeight: FontWeight.bold))),
-            DataColumn(label: Text('Tipo', style: TextStyle(fontWeight: FontWeight.bold))),
+            DataColumn(label: Text('Procedimiento', style: TextStyle(fontWeight: FontWeight.bold))),
+            DataColumn(label: Text('Testigo', style: TextStyle(fontWeight: FontWeight.bold))),
             DataColumn(label: Text('Estado', style: TextStyle(fontWeight: FontWeight.bold))),
             DataColumn(label: Text('Fecha Registro', style: TextStyle(fontWeight: FontWeight.bold))),
-            DataColumn(label: Text('Vigencia', style: TextStyle(fontWeight: FontWeight.bold))),
           ],
           rows: _consents.map((c) {
             final date = DateTime.parse(c['fecha_hora']);
-            // Cambio: Vigencia de 1 año (Punto 1 y 2)
-            final vigencia = DateTime(date.year + 1, date.month, date.day, date.hour, date.minute);
             
             return DataRow(cells: [
               DataCell(Text(c['paciente_nombre'] ?? 'N/A')),
               DataCell(Text(c['procedimiento'] ?? 'Emergencia')),
+              DataCell(Text(c['testigos'] ?? 'N/A')),
               DataCell(_buildStatusChip('Activo')),
               DataCell(Text(DateFormat('dd/MM/yy HH:mm').format(date))),
-              DataCell(Text(DateFormat('dd/MM/yy HH:mm').format(vigencia))),
             ]);
           }).toList(),
         ),

@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HistoLink - Consentimiento de Emergencia</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #2C7DA0;
+            --danger-color: #E63946;
+            --success-color: #2A9D8F;
+            --bg-color: #F8F9FA;
+            --text-color: #1F2937;
+            --border-radius: 12px;
+            --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            line-height: 1.5;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+        }
+
+        .container {
+            max-width: 800px;
+            width: 100%;
+            background: white;
+            padding: 32px;
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow);
+        }
+
+        header {
+            border-bottom: 2px solid #E5E7EB;
+            padding-bottom: 20px;
+            margin-bottom: 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        h1 {
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--primary-color);
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #4B5563;
+        }
+
+        input[type="text"],
+        select,
+        textarea {
+            width: 100%;
+            padding: 12px 16px;
+            border: 1.5px solid #D1D5DB;
+            border-radius: 8px;
+            font-size: 16px;
+            font-family: inherit;
+            transition: border-color 0.2s;
+        }
+
+        input:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: var(--primary-color);
+        }
+
+        input:disabled {
+            background-color: #F1F5F9;
+            color: #64748B;
+            cursor: not-allowed;
+        }
+
+        textarea {
+            resize: vertical;
+            min-height: 100px;
+        }
+
+        /* Tarjeta de información del paciente */
+        .patient-card {
+            background-color: #F0F9FF;
+            border: 1px solid #BAE6FD;
+            padding: 16px;
+            border-radius: 8px;
+            margin-bottom: 24px;
+            display: none; /* Se muestra al seleccionar un paciente */
+        }
+
+        .patient-card h3 {
+            font-size: 18px;
+            color: var(--primary-color);
+            margin-bottom: 4px;
+        }
+
+        .patient-card p {
+            font-size: 14px;
+            color: #0369A1;
+        }
+
+        /* Burbujas rápidas */
+        .quick-chips {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 8px;
+        }
+
+        .chip {
+            background: white;
+            border: 1px solid #D1D5DB;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .chip:hover {
+            background-color: #F3F4F6;
+            border-color: var(--primary-color);
+        }
+
+        /* Alerta de duplicado */
+        #duplicate-warning {
+            background-color: #FEE2E2;
+            border: 1px solid #FECACA;
+            color: #991B1B;
+            padding: 16px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: none;
+            align-items: center;
+            gap: 12px;
+            font-weight: 600;
+        }
+
+        /* Botón principal */
+        .btn-register {
+            width: 100%;
+            background-color: var(--danger-color);
+            color: white;
+            border: none;
+            padding: 16px;
+            font-size: 18px;
+            font-weight: 700;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background-color 0.2s, transform 0.1s;
+            box-shadow: 0 4px 6px -1px rgba(230, 57, 70, 0.3);
+            margin-top: 20px;
+        }
+
+        .btn-register:hover {
+            background-color: #D62828;
+        }
+
+        .btn-register:active {
+            transform: scale(0.98);
+        }
+
+        .btn-register:disabled {
+            background-color: #D1D5DB;
+            cursor: not-allowed;
+            box-shadow: none;
+        }
+
+        /* Toast notifications */
+        .toast {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            padding: 16px 24px;
+            border-radius: 8px;
+            color: white;
+            font-weight: 600;
+            box-shadow: var(--shadow);
+            transform: translateY(100px);
+            transition: transform 0.3s ease-out;
+            z-index: 1000;
+        }
+
+        .toast.show {
+            transform: translateY(0);
+        }
+
+        .toast.success { background-color: var(--success-color); }
+        .toast.error { background-color: var(--danger-color); }
+
+        @media (max-width: 600px) {
+            .container { padding: 20px; }
+            h1 { font-size: 20px; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <h1>Consentimiento de Emergencia</h1>
+        <div style="font-size: 12px; color: #6B7280; font-weight: 600;">T020 - WEB</div>
+    </header>
+
+    <form id="consent-form">
+        <!-- 1. Selección de Paciente -->
+        <div class="form-group">
+            <label for="patient-select">Selección de Paciente *</label>
+            <select id="patient-select" required>
+                <option value="" disabled selected>Elija un paciente...</option>
+                <!-- Se cargará dinámicamente -->
+            </select>
+        </div>
+
+        <div id="patient-info" class="patient-card">
+            <h3 id="display-name">Lorena García Rocha</h3>
+            <p id="display-details">CI: 49593002 • 26 años</p>
+        </div>
+
+        <!-- Alerta de Duplicado -->
+        <div id="duplicate-warning">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+            Ya existe un consentimiento registrado hoy para este paciente. No se puede registrar otro.
+        </div>
+
+        <div id="form-body">
+            <!-- 2. Procedimiento -->
+            <div class="form-group">
+                <label for="procedure">Procedimiento Urgente *</label>
+                <select id="procedure" required>
+                    <option value="" disabled selected>Seleccione el procedimiento...</option>
+                    <option value="Reanimación cardiopulmonar">Reanimación cardiopulmonar</option>
+                    <option value="Intubación">Intubación</option>
+                    <option value="Cirugía de urgencia">Cirugía de urgencia</option>
+                    <option value="Transfusión sanguínea">Transfusión sanguínea</option>
+                    <option value="Administración de fármacos de alto riesgo">Administración de fármacos de alto riesgo</option>
+                    <option value="Otro">Otro</option>
+                </select>
+            </div>
+
+            <!-- 3. Justificación -->
+            <div class="form-group">
+                <label for="justification">Justificación de la Incapacidad *</label>
+                <textarea id="justification" required placeholder="Describa por qué el paciente no puede firmar..."></textarea>
+                <div class="quick-chips">
+                    <button type="button" class="chip" onclick="addJustification('Paciente inconsciente')">Paciente inconsciente</button>
+                    <button type="button" class="chip" onclick="addJustification('Riesgo vital inminente')">Riesgo vital inminente</button>
+                    <button type="button" class="chip" onclick="addJustification('Menor de edad sin apoderado')">Menor de edad sin apoderado</button>
+                    <button type="button" class="chip" onclick="addJustification('Paciente en estado crítico sin capacidad de decisión')">Estado crítico</button>
+                </div>
+            </div>
+
+            <!-- 4. Testigo -->
+            <div class="form-group">
+                <label for="witness">Nombre del Testigo *</label>
+                <input type="text" id="witness" required placeholder="Nombre completo del testigo">
+            </div>
+
+            <!-- 5. Fecha y Hora (Bloqueada) -->
+            <div class="form-group">
+                <label for="datetime">Fecha y Hora de Registro (Solo lectura)</label>
+                <input type="text" id="datetime" disabled>
+            </div>
+
+            <button type="submit" id="submit-btn" class="btn-register">REGISTRAR CONSENTIMIENTO</button>
+        </div>
+    </form>
+</div>
+
+<div id="toast" class="toast"></div>
+
+<script>
+    // --- DATOS MOCK ---
+    const realPatients = [
+        { id: 1001, nombre: "Lorena García Rocha", ci: "49593002", edad: 26 },
+        { id: 1002, nombre: "Roberto Chavez Inca", ci: "3001003", edad: 50 },
+        { id: 1003, nombre: "Maria Elena Torres Vargas", ci: "3001002", edad: 67 },
+        { id: 1004, nombre: "Juan Carlos Perez Soria", ci: "3001001", edad: 65 }
+    ];
+
+    // --- ELEMENTOS DEL DOM ---
+    const form = document.getElementById('consent-form');
+    const patientSelect = document.getElementById('patient-select');
+    const patientInfo = document.getElementById('patient-info');
+    const displayName = document.getElementById('display-name');
+    const displayDetails = document.getElementById('display-details');
+    const duplicateWarning = document.getElementById('duplicate-warning');
+    const formBody = document.getElementById('form-body');
+    const justificationText = document.getElementById('justification');
+    const dateTimeInput = document.getElementById('datetime');
+    const submitBtn = document.getElementById('submit-btn');
+    const toast = document.getElementById('toast');
+
+    // --- INICIALIZACIÓN ---
+    function init() {
+        // Cargar pacientes
+        realPatients.forEach(p => {
+            const opt = document.createElement('option');
+            opt.value = p.id;
+            opt.textContent = p.nombre;
+            patientSelect.appendChild(opt);
+        });
+
+        // Actualizar reloj cada minuto
+        updateClock();
+        setInterval(updateClock, 60000);
+    }
+
+    function updateClock() {
+        const now = new Date();
+        const formatted = now.toLocaleDateString('es-ES', {
+            day: '2-digit', month: '2-digit', year: 'numeric'
+        }) + ' ' + now.toLocaleTimeString('es-ES', {
+            hour: '2-digit', minute: '2-digit'
+        });
+        dateTimeInput.value = formatted;
+    }
+
+    // --- LÓGICA DE PACIENTES ---
+    patientSelect.addEventListener('change', (e) => {
+        const patientId = parseInt(e.target.value);
+        const patient = realPatients.find(p => p.id === patientId);
+        
+        if (patient) {
+            displayName.textContent = patient.nombre;
+            displayDetails.textContent = `CI: ${patient.ci} • ${patient.edad} años`;
+            patientInfo.style.display = 'block';
+            
+            checkDuplicate(patientId);
+        }
+    });
+
+    function checkDuplicate(patientId) {
+        const consents = JSON.parse(localStorage.getItem('consents') || '[]');
+        const today = new Date().toISOString().split('T')[0];
+        
+        const hasDuplicate = consents.some(c => 
+            c.paciente_id === patientId && c.fecha_registro.startsWith(today)
+        );
+
+        if (hasDuplicate) {
+            duplicateWarning.style.display = 'flex';
+            submitBtn.disabled = true;
+            submitBtn.style.opacity = '0.5';
+        } else {
+            duplicateWarning.style.display = 'none';
+            submitBtn.disabled = false;
+            submitBtn.style.opacity = '1';
+        }
+    }
+
+    // --- UTILIDADES FORMULARIO ---
+    window.addJustification = function(text) {
+        const current = justificationText.value;
+        justificationText.value = current ? `${current}, ${text}` : text;
+        justificationText.focus();
+    };
+
+    // --- GUARDADO ---
+    form.addEventListener('submit', (e) => {
+        e.preventDefault();
+        
+        const patientId = parseInt(patientSelect.value);
+        const patient = realPatients.find(p => p.id === patientId);
+        
+        const now = new Date();
+        // Vigencia + 1 año (Punto 6)
+        const validityDate = new Date(now);
+        validityDate.setFullYear(now.getFullYear() + 1);
+
+        const newConsent = {
+            id: 'EMG-' + Date.now(),
+            paciente_id: patientId,
+            paciente_nombre: patient.nombre,
+            procedimiento: document.getElementById('procedure').value,
+            justificacion: justificationText.value,
+            testigos: document.getElementById('witness').value,
+            fecha_registro: now.toISOString(),
+            fecha_vigencia: validityDate.toISOString(),
+            sincronizado: false
+        };
+
+        // Guardar localmente
+        saveConsent(newConsent);
+    });
+
+    function saveConsent(consent) {
+        try {
+            const consents = JSON.parse(localStorage.getItem('consents') || '[]');
+            consents.push(consent);
+            localStorage.setItem('consents', JSON.stringify(consents));
+
+            showToast('Consentimiento registrado exitosamente (Modo Offline)', 'success');
+            submitBtn.disabled = true;
+
+            // Simular Sincronización
+            console.log('--- ENVIANDO AL BACKEND ---');
+            console.log(JSON.stringify(consent, null, 2));
+
+            // Redirigir (Punto 7)
+            setTimeout(() => {
+                // En un entorno real: window.history.back() o ruta específica
+                alert('Redirigiendo a ficha clínica del paciente...');
+                location.reload(); // Reiniciar para nueva prueba
+            }, 2000);
+
+        } catch (err) {
+            showToast('Error al guardar: ' + err.message, 'error');
+        }
+    }
+
+    function showToast(msg, type) {
+        toast.textContent = msg;
+        toast.className = `toast show ${type}`;
+        setTimeout(() => toast.className = 'toast', 3000);
+    }
+
+    init();
+</script>
+
+</body>
+</html>
