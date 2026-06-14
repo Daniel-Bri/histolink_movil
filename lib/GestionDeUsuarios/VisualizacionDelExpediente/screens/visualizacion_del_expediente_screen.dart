@@ -78,12 +78,6 @@ class _VisualizacionDelExpedienteScreenState
     return '$h:$m:$s';
   }
 
-  bool get _breakGlassActivo {
-    final s = _breakGlassSolicitud;
-    if (s == null) return false;
-    return s.accesoActivo && _breakGlassRemaining > Duration.zero;
-  }
-
   void _tickBreakGlassCountdown() {
     final until = _breakGlassSolicitud?.accesoHasta;
     if (until == null) {

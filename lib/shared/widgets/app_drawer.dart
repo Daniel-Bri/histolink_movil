@@ -11,6 +11,7 @@ import 'package:histolink/AtencionClinica/EmisionDeRecetaMedica/screens/emision_
 import 'package:histolink/AtencionClinica/ConsultaMedicaSOAP/screens/consulta_medica_soap_screen.dart';
 import 'package:histolink/SeguridadAvanzadaYAdministracion/ReporteProduccion/screens/reportes_rapidos_screen.dart';
 import 'package:histolink/SeguridadAvanzadaYAdministracion/PanelDeAuditoriaYReportesSNIS/screens/panel_de_auditoria_y_reportes_snis_screen.dart';
+import 'package:histolink/SeguridadAvanzadaYAdministracion/BreakGlass_Aprobacion/screens/break_glass_aprobacion_screen.dart';
 
 // ── Colores del sidebar (mismos que web) ─────────────────────────────────────
 const _bgSidebar = Color(0xFF122268);
@@ -126,6 +127,12 @@ final _sections = <_NavSection>[
       icon: Icons.shield_outlined,
       roles: ['Auditor', 'Director', 'Administrativo'],
       screenBuilder: (user) => PanelDeAuditoriaYReportesSNISScreen(user: user),
+    ),
+    _NavItem(
+      label: 'Aprobación Break-Glass',
+      icon: Icons.emergency_share_outlined,
+      roles: ['Auditor', 'Director'],
+      screenBuilder: (user) => BreakGlassAprobacionScreen(user: user),
     ),
     _NavItem(label: 'Administración', icon: Icons.settings_outlined, soon: true, roles: ['Administrativo', 'Director']),
   ]),
