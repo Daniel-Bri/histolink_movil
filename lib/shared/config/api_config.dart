@@ -15,10 +15,11 @@ class ApiConfig {
 
   // Emulador Android: 10.0.2.2 es el alias del localhost del PC.
   // Para dispositivo físico cambiar a la IP LAN: '192.168.x.x:8000'
-  static const String _mobileHost = '10.0.2.2:8000';
+   // Celular físico por USB con adb reverse
+  static const String _mobileHost = '127.0.0.1:8000';
 
-  // Override opcional vía --dart-define=API_HOST=...
-  static const String _customHost = String.fromEnvironment('API_HOST', defaultValue: '');
+  static const String _customHost =
+      String.fromEnvironment('API_HOST', defaultValue: '');
 
   static String get baseUrl {
     if (_customHost.isNotEmpty) {
