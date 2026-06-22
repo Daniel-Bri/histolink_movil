@@ -1,7 +1,10 @@
 class BreakGlassSolicitudModel {
   const BreakGlassSolicitudModel({
     required this.id,
+    required this.solicitanteId,
+    required this.solicitanteUsername,
     required this.pacienteId,
+    required this.pacienteCi,
     required this.pacienteNombre,
     required this.justificacion,
     required this.nivelUrgencia,
@@ -15,7 +18,10 @@ class BreakGlassSolicitudModel {
   });
 
   final int id;
+  final int solicitanteId;
+  final String solicitanteUsername;
   final int pacienteId;
+  final String pacienteCi;
   final String pacienteNombre;
   final String justificacion;
   final String nivelUrgencia;
@@ -37,7 +43,10 @@ class BreakGlassSolicitudModel {
 
     return BreakGlassSolicitudModel(
       id: (j['id'] as num?)?.toInt() ?? 0,
+      solicitanteId: (j['solicitante_id'] as num?)?.toInt() ?? 0,
+      solicitanteUsername: (j['solicitante_username'] ?? '').toString(),
       pacienteId: (j['paciente_id'] as num?)?.toInt() ?? 0,
+      pacienteCi: (j['paciente_ci'] ?? '').toString(),
       pacienteNombre: (j['paciente_nombre'] ?? '').toString(),
       justificacion: (j['justificacion'] ?? '').toString(),
       nivelUrgencia: (j['nivel_urgencia'] ?? '').toString(),
@@ -51,4 +60,3 @@ class BreakGlassSolicitudModel {
     );
   }
 }
-

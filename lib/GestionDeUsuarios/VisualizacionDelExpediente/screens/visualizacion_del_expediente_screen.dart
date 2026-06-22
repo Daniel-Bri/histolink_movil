@@ -1,8 +1,11 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:histolink/GestionDeUsuarios/VisualizacionDelExpediente/models/expediente_resumido_model.dart';
 import 'package:histolink/GestionDeUsuarios/VisualizacionDelExpediente/services/expediente_service.dart';
 import 'package:histolink/IA_Blockchain/VerificacionDeIntegridadDocumentos/screens/verificacion_de_integridad_screen.dart';
+import 'package:histolink/SeguridadAvanzadaYAdministracion/BreakGlass_Solicitud/models/break_glass_solicitud_model.dart';
 import 'package:histolink/SeguridadAvanzadaYAdministracion/BreakGlass_Solicitud/screens/break_glass_solicitud_screen.dart';
+import 'package:histolink/SeguridadAvanzadaYAdministracion/BreakGlass_Solicitud/services/break_glass_solicitud_service.dart';
 import 'package:histolink/shared/theme/app_colors.dart';
 
 // ── Paleta neutral ────────────────────────────────────────────────────────────
@@ -42,11 +45,15 @@ class _VisualizacionDelExpedienteScreenState
     extends State<VisualizacionDelExpedienteScreen> {
   late final TextEditingController _idCtrl;
   final _service = ExpedienteService();
+  final _breakGlassService = BreakGlassSolicitudService();
 
   bool _loading = false;
   String? _error;
   ExpedienteResumido? _exp;
   bool _openingBreakGlass = false;
+  BreakGlassSolicitudModel? _breakGlassSolicitud;
+  Duration _breakGlassRemaining = Duration.zero;
+  Timer? _breakGlassTimer;
 
   bool get _modoDirecto => widget.pacienteId != null;
 
@@ -55,12 +62,73 @@ class _VisualizacionDelExpedienteScreenState
     super.initState();
     _idCtrl = TextEditingController(text: widget.pacienteId?.toString() ?? '');
     _cargar();
+    _breakGlassTimer = Timer.periodic(const Duration(seconds: 1), (_) => _tickBreakGlassCountdown());
   }
 
   @override
   void dispose() {
+    _breakGlassTimer?.cancel();
     _idCtrl.dispose();
     super.dispose();
+  }
+
+  String _fmtRemaining(Duration d) {
+    final h = d.inHours.toString().padLeft(2, '0');
+    final m = (d.inMinutes % 60).toString().padLeft(2, '0');
+    final s = (d.inSeconds % 60).toString().padLeft(2, '0');
+    return '$h:$m:$s';
+  }
+
+  void _tickBreakGlassCountdown() {
+    final until = _breakGlassSolicitud?.accesoHasta;
+    if (until == null) {
+      if (!mounted || _breakGlassRemaining == Duration.zero) return;
+      setState(() => _breakGlassRemaining = Duration.zero);
+      return;
+    }
+    final left = until.difference(DateTime.now());
+    final safe = left.isNegative ? Duration.zero : left;
+    if (!mounted) return;
+    if (_breakGlassRemaining.inSeconds != safe.inSeconds) {
+      setState(() => _breakGlassRemaining = safe);
+    }
+  }
+
+  Future<void> _cargarEstadoBreakGlass(int pacienteId) async {
+    try {
+      final all = await _breakGlassService.misSolicitudes();
+      final list = all.where((s) => s.pacienteId == pacienteId).toList()
+        ..sort((a, b) => b.creadoEn.compareTo(a.creadoEn));
+      if (!mounted) return;
+      setState(() {
+        _breakGlassSolicitud = list.isEmpty ? null : list.first;
+      });
+      _tickBreakGlassCountdown();
+    } catch (_) {
+      // No bloquea el expediente si falla la consulta de estado break-glass.
+    }
+  }
+
+  Future<void> _abrirPantallaBreakGlass(int pacienteId, {String? pacienteNombre}) async {
+    if (_openingBreakGlass) return;
+    _openingBreakGlass = true;
+    final granted = await Navigator.push<bool>(
+      context,
+      MaterialPageRoute(
+        builder: (_) => BreakGlassSolicitudScreen(
+          pacienteId: pacienteId,
+          pacienteNombre: (pacienteNombre != null && pacienteNombre.isNotEmpty)
+              ? pacienteNombre
+              : 'Paciente #$pacienteId',
+        ),
+      ),
+    );
+    _openingBreakGlass = false;
+    if (!mounted) return;
+    await _cargarEstadoBreakGlass(pacienteId);
+    if (granted == true) {
+      await _cargar();
+    }
   }
 
   Future<void> _cargar() async {
@@ -74,25 +142,13 @@ class _VisualizacionDelExpedienteScreenState
       final exp = await _service.obtenerExpedienteResumido(id);
       if (!mounted) return;
       setState(() => _exp = exp);
+      await _cargarEstadoBreakGlass(id);
     } on ExpedienteApiException catch (e) {
-      if (e.statusCode == 403 && !_openingBreakGlass) {
-        _openingBreakGlass = true;
+      if (e.statusCode == 403) {
         final pacienteNombre = (e.data?['paciente_nombre'] ?? '').toString();
-        final granted = await Navigator.push<bool>(
-          context,
-          MaterialPageRoute(
-            builder: (_) => BreakGlassSolicitudScreen(
-              pacienteId: id,
-              pacienteNombre: pacienteNombre.isNotEmpty ? pacienteNombre : 'Paciente #$id',
-            ),
-          ),
-        );
-        _openingBreakGlass = false;
+        await _abrirPantallaBreakGlass(id, pacienteNombre: pacienteNombre);
         if (!mounted) return;
-        if (granted == true) {
-          await _cargar();
-          return;
-        }
+        if (_exp != null) return;
       }
       if (!mounted) return;
       setState(() { _error = e.message; _exp = null; });
@@ -131,6 +187,17 @@ class _VisualizacionDelExpedienteScreenState
             if (!_loading && _error != null)
               _MensajeCard(icon: Icons.error_outline_rounded, texto: _error!, danger: true),
             if (!_loading && _error == null && _exp != null) ...[
+              _BreakGlassEstadoBanner(
+                solicitud: _breakGlassSolicitud,
+                remainingText: _fmtRemaining(_breakGlassRemaining),
+                onVerEstado: () => _abrirPantallaBreakGlass(
+                  int.tryParse(_idCtrl.text.trim()) ?? widget.pacienteId ?? 0,
+                  pacienteNombre: _exp != null
+                      ? '${_exp!.nombres} ${_exp!.apellidoPaterno}'
+                      : null,
+                ),
+              ),
+              const SizedBox(height: 12),
               _CabeceraCard(exp: _exp!),
               const SizedBox(height: 12),
               _AntecedentesCard(ant: _exp!.antecedentes),
@@ -139,6 +206,63 @@ class _VisualizacionDelExpedienteScreenState
             ],
           ],
         ),
+      ),
+    );
+  }
+}
+
+class _BreakGlassEstadoBanner extends StatelessWidget {
+  const _BreakGlassEstadoBanner({
+    required this.solicitud,
+    required this.remainingText,
+    required this.onVerEstado,
+  });
+
+  final BreakGlassSolicitudModel? solicitud;
+  final String remainingText;
+  final VoidCallback onVerEstado;
+
+  @override
+  Widget build(BuildContext context) {
+    if (solicitud == null) return const SizedBox.shrink();
+
+    final activo = solicitud!.accesoActivo &&
+        !solicitud!.accesoExpirado &&
+        solicitud!.accesoHasta != null &&
+        DateTime.now().isBefore(solicitud!.accesoHasta!);
+
+    final color = activo ? const Color(0xFFE8FFF1) : const Color(0xFFFFF7ED);
+    final border = activo ? const Color(0xFF86EFAC) : const Color(0xFFFCD34D);
+    final text = activo ? const Color(0xFF166534) : const Color(0xFF92400E);
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: color,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: border),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            activo
+                ? 'Acceso de emergencia activo · Tiempo restante: $remainingText'
+                : 'Solicitud Break-Glass: ${solicitud!.estado}',
+            style: TextStyle(
+              color: text,
+              fontWeight: FontWeight.w700,
+              fontSize: 13,
+            ),
+          ),
+          const SizedBox(height: 8),
+          OutlinedButton.icon(
+            onPressed: onVerEstado,
+            icon: const Icon(Icons.shield_outlined),
+            label: const Text('Ver estado de acceso de emergencia'),
+          ),
+        ],
       ),
     );
   }
