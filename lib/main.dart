@@ -1,3 +1,4 @@
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:histolink/app_navigator.dart';
 import 'package:histolink/shared/theme/app_colors.dart';
@@ -5,9 +6,12 @@ import 'package:histolink/shared/screens/dashboard_screen.dart';
 import 'package:histolink/shared/models/user_model.dart';
 import 'package:histolink/GestionDeUsuarios/LoginYAutenticacion/screens/login_screen.dart';
 import 'package:histolink/GestionDeUsuarios/LoginYAutenticacion/services/auth_service.dart';
+import 'package:histolink/shared/services/fcm_service.dart';
 
-void main() {
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp();
+  await FcmService.instance.init();
   runApp(const HistolinkApp());
 }
 
