@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "571516822155",
+    "project_id": "histolink-ec5ef",
+    "storage_bucket": "histolink-ec5ef.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:571516822155:android:f4f26fe1657e47762b2a8e",
+        "android_client_info": {
+          "package_name": "com.example.histolink"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDTwkxtgmSSgvShhBOO_gTPkb1FdinwpHw"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

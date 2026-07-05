@@ -22,6 +22,7 @@ class HistolinkApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       navigatorKey: appNavigatorKey,
+      scaffoldMessengerKey: appScaffoldMessengerKey,
       title: 'Histolink',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(

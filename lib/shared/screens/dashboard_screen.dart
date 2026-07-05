@@ -4,6 +4,7 @@ import 'package:histolink/shared/models/user_model.dart';
 import 'package:histolink/shared/widgets/app_drawer.dart';
 import 'package:histolink/GestionDeUsuarios/LoginYAutenticacion/services/auth_service.dart';
 import 'package:histolink/GestionDeUsuarios/LoginYAutenticacion/screens/login_screen.dart';
+import 'package:histolink/shared/services/fcm_service.dart';
 import 'package:histolink/GestionDeUsuarios/RegistroYBusquedaDePacientes/screens/registro_y_busqueda_de_pacientes_screen.dart';
 import 'package:histolink/AtencionClinica/AperturaFichaYColaDeAtencion/screens/apertura_ficha_y_cola_de_atencion_screen.dart';
 
@@ -14,6 +15,8 @@ class DashboardScreen extends StatelessWidget {
 
   Future<void> _logout(BuildContext context) async {
     try {
+      // Desactivar el token FCM antes de borrar la sesión (necesita el access_token).
+      await FcmService.instance.eliminarToken();
       await AuthService().logout();
     } catch (_) {
       // Si falla el logout remoto o local, igual navegamos al login
