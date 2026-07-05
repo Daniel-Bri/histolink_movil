@@ -7,9 +7,9 @@
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:571516822155:android:d2177e5c86971aa72b2a8e",
+        "mobilesdk_app_id": "1:571516822155:android:f4f26fe1657e47762b2a8e",
         "android_client_info": {
-          "package_name": "com.histolink"
+          "package_name": "com.example.histolink"
         }
       },
       "oauth_client": [],

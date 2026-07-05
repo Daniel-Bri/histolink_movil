@@ -1,9 +1,12 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:histolink/shared/theme/app_colors.dart';
 import 'package:histolink/GestionDeUsuarios/LoginYAutenticacion/services/auth_service.dart';
 import 'package:histolink/GestionDeUsuarios/LoginYAutenticacion/screens/olvidar_password_screen.dart';
 import 'package:histolink/shared/models/user_model.dart';
 import 'package:histolink/shared/screens/dashboard_screen.dart';
+import 'package:histolink/shared/services/fcm_service.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -42,6 +45,11 @@ class _LoginScreenState extends State<LoginScreen> {
         _usernameController.text.trim(),
         _passwordController.text,
       );
+
+      // Recién aquí existe un access_token guardado: registra/renueva el
+      // token FCM contra el backend. Los listeners ya se registraron en
+      // main() vía init(); aquí solo sincronizamos el token de esta sesión.
+      unawaited(FcmService.instance.sincronizarToken());
 
       if (!mounted) return;
       Navigator.pushReplacement(

@@ -3,14 +3,15 @@ import 'package:histolink/shared/models/user_model.dart';
 import 'package:histolink/shared/screens/error_screen.dart';
 import 'package:histolink/GestionDeUsuarios/LoginYAutenticacion/services/auth_service.dart';
 import 'package:histolink/GestionDeUsuarios/LoginYAutenticacion/screens/login_screen.dart';
+import 'package:histolink/shared/services/fcm_service.dart';
 import 'package:histolink/GestionDeUsuarios/RegistroYBusquedaDePacientes/screens/registro_y_busqueda_de_pacientes_screen.dart';
 import 'package:histolink/AtencionClinica/SolicitudDeEstudios/screens/solicitud_de_estudios_screen.dart';
 import 'package:histolink/AtencionClinica/RegistroDeTriaje/screens/registro_de_triaje_screen.dart';
 import 'package:histolink/AtencionClinica/AperturaFichaYColaDeAtencion/screens/apertura_ficha_y_cola_de_atencion_screen.dart';
 import 'package:histolink/AtencionClinica/EmisionDeRecetaMedica/screens/emision_de_receta_medica_screen.dart';
-import 'package:histolink/AtencionClinica/ConsultaMedicaSOAP/screens/consulta_medica_soap_screen.dart';
 import 'package:histolink/SeguridadAvanzadaYAdministracion/ReporteProduccion/screens/reportes_rapidos_screen.dart';
 import 'package:histolink/SeguridadAvanzadaYAdministracion/PanelDeAuditoriaYReportesSNIS/screens/panel_de_auditoria_y_reportes_snis_screen.dart';
+import 'package:histolink/SeguridadAvanzadaYAdministracion/BreakGlass_Aprobacion/screens/break_glass_aprobacion_screen.dart';
 
 import 'package:histolink/IA_Blockchain/ConfiguracionDeConsentimiento/screens/configuracion_de_consentimiento_screen.dart';
 
@@ -45,14 +46,12 @@ class _RolColor {
 class _NavItem {
   final String label;
   final IconData icon;
-  final bool soon;
   final List<String> roles;
   final Widget Function(UserModel)? screenBuilder;
 
   const _NavItem({
     required this.label,
     required this.icon,
-    this.soon = false,
     this.roles = const [],
     this.screenBuilder,
   });
@@ -71,12 +70,6 @@ final _sections = <_NavSection>[
       icon: Icons.people_outline_rounded,
       screenBuilder: (_) => const RegistroYBusquedaDePacientesScreen(),
     ),
-    _NavItem(
-      label: 'Personal de Salud',
-      icon: Icons.badge_outlined,
-      soon: true,
-      roles: ['Administrativo', 'Director'],
-    ),
   ]),
   _NavSection(title: 'Atención Clínica', items: [
     _NavItem(
@@ -91,12 +84,6 @@ final _sections = <_NavSection>[
       screenBuilder: (user) => RegistroDeTriajeScreen(user: user),
     ),
     _NavItem(
-      label: 'Consulta SOAP',
-      icon: Icons.medical_services_outlined,
-      roles: ['Médico'],
-      screenBuilder: (_) => const ConsultaMedicaSoapScreen(),
-    ),
-    _NavItem(
       label: 'Receta Médica',
       icon: Icons.receipt_long_outlined,
       roles: ['Médico', 'Farmacia'],
@@ -108,8 +95,6 @@ final _sections = <_NavSection>[
       roles: ['Médico', 'Laboratorio'],
       screenBuilder: (_) => const SolicitudDeEstudiosScreen(),
     ),
-    _NavItem(label: 'Historial Clínico', icon: Icons.assignment_outlined,    soon: true),
-    _NavItem(label: 'Agenda',            icon: Icons.calendar_month_outlined, soon: true),
   ]),
   _NavSection(title: 'IA + Blockchain', items: [
     _NavItem(
@@ -117,9 +102,6 @@ final _sections = <_NavSection>[
       icon: Icons.assignment_turned_in_rounded,
       screenBuilder: (_) => const ConfiguracionDeConsentimientoScreen(),
     ),
-    _NavItem(label: 'Clasificación IA', icon: Icons.memory_outlined,        soon: true),
-    _NavItem(label: 'Riesgo Clínico',   icon: Icons.favorite_border_rounded, soon: true),
-    _NavItem(label: 'Blockchain',       icon: Icons.link_rounded,            soon: true),
   ]),
   _NavSection(title: 'Seguridad y Admin', items: [
     _NavItem(
@@ -134,7 +116,12 @@ final _sections = <_NavSection>[
       roles: ['Auditor', 'Director', 'Administrativo'],
       screenBuilder: (user) => PanelDeAuditoriaYReportesSNISScreen(user: user),
     ),
-    _NavItem(label: 'Administración', icon: Icons.settings_outlined, soon: true, roles: ['Administrativo', 'Director']),
+    _NavItem(
+      label: 'Aprobación Break-Glass',
+      icon: Icons.lock_open_outlined,
+      roles: ['Auditor', 'Director'],
+      screenBuilder: (user) => BreakGlassAprobacionScreen(user: user),
+    ),
   ]),
 ];
 
@@ -151,6 +138,8 @@ class AppDrawer extends StatelessWidget {
 
   Future<void> _logout(BuildContext context) async {
     try {
+      // Desactivar el token FCM antes de borrar la sesión (necesita el access_token).
+      await FcmService.instance.eliminarToken();
       await AuthService().logout();
     } catch (_) {}
     if (!context.mounted) return;
@@ -314,9 +303,7 @@ class AppDrawer extends StatelessWidget {
                         final hasAccess = _canAccess(user, item);
 
                         VoidCallback? onTap;
-                        if (item.soon) {
-                          onTap = null;
-                        } else if (!hasAccess) {
+                        if (!hasAccess) {
                           onTap = () {
                             Navigator.of(context).pop();
                             Navigator.of(context).push(
@@ -398,13 +385,12 @@ class _NavTileState extends State<_NavTile> {
   @override
   Widget build(BuildContext context) {
     final active = widget.isActive;
-    final soon = widget.item.soon;
     final hasAccess = widget.hasAccess;
 
     Color textColor;
     if (active) {
       textColor = Colors.white;
-    } else if (soon || !hasAccess) {
+    } else if (!hasAccess) {
       textColor = _textLow;
     } else {
       textColor = _textHigh;
@@ -420,7 +406,7 @@ class _NavTileState extends State<_NavTile> {
         decoration: BoxDecoration(
           color: active
               ? _activeBg
-              : (_pressed && !soon ? _hoverBg : Colors.transparent),
+              : (_pressed ? _hoverBg : Colors.transparent),
           border: Border(
             left: BorderSide(
               color: active ? _activeBorder : Colors.transparent,
@@ -443,9 +429,7 @@ class _NavTileState extends State<_NavTile> {
                 ),
               ),
             ),
-            if (soon)
-              _Badge(label: 'Pronto', bg: const Color(0x1AFFFFFF), text: _textLow),
-            if (!soon && !hasAccess)
+            if (!hasAccess)
               _Badge(
                 label: 'Sin acceso',
                 bg: const Color(0x1FEF4444),
