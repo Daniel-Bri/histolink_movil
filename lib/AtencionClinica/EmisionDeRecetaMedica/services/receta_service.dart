@@ -41,6 +41,13 @@ class RecetaService {
     throw RecetaApiException('Error al crear receta (${res.statusCode})');
   }
 
+  /// Recetas de una consulta específica (filtrado en cliente: el endpoint
+  /// de listado no soporta ?consulta= por ahora).
+  Future<List<RecetaModel>> listarPorConsulta(int consultaId) async {
+    final todas = await listar();
+    return todas.where((r) => r.consulta == consultaId).toList();
+  }
+
   Future<RecetaModel> dispensar(int id) async {
     final res = await _api.patch('/api/clinica/recetas/$id/dispensar/');
     if (res.statusCode == 200) {

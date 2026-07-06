@@ -6,6 +6,7 @@ import 'package:histolink/GestionDeUsuarios/LoginYAutenticacion/services/auth_se
 import 'package:histolink/GestionDeUsuarios/LoginYAutenticacion/screens/login_screen.dart';
 import 'package:histolink/shared/services/fcm_service.dart';
 import 'package:histolink/GestionDeUsuarios/RegistroYBusquedaDePacientes/screens/registro_y_busqueda_de_pacientes_screen.dart';
+import 'package:histolink/GestionDeUsuarios/VisualizacionDelExpediente/screens/visualizacion_del_expediente_screen.dart';
 import 'package:histolink/AtencionClinica/AperturaFichaYColaDeAtencion/screens/apertura_ficha_y_cola_de_atencion_screen.dart';
 
 class DashboardScreen extends StatelessWidget {
@@ -208,48 +209,83 @@ class DashboardScreen extends StatelessWidget {
               crossAxisSpacing: 14,
               mainAxisSpacing: 14,
               childAspectRatio: 1.05,
-              children: [
-                _MenuCard(
-                  icon: Icons.people_outline_rounded,
-                  label: 'Pacientes',
-                  iconColor: AppColors.azulPuro,
-                  bgColor: AppColors.azulCielo,
-                  onTap: () {
-                    Navigator.push<void>(
-                      context,
-                      MaterialPageRoute<void>(
-                        builder: (_) => const RegistroYBusquedaDePacientesScreen(),
+              children: user.esPaciente
+                  // ── Menú del PACIENTE (Sprint 5) ─────────────────────────
+                  ? [
+                      _MenuCard(
+                        icon: Icons.folder_shared_outlined,
+                        label: 'Mi Expediente',
+                        iconColor: AppColors.azulPuro,
+                        bgColor: AppColors.azulCielo,
+                        onTap: () {
+                          Navigator.push<void>(
+                            context,
+                            MaterialPageRoute<void>(
+                              builder: (_) =>
+                                  const VisualizacionDelExpedienteScreen(selfMode: true),
+                            ),
+                          );
+                        },
                       ),
-                    );
-                  },
-                ),
-                _MenuCard(
-                  icon: Icons.assignment_outlined,
-                  label: 'Consultas',
-                  iconColor: AppColors.mentaVibrante,
-                  bgColor: AppColors.mentaSuave,
-                  onTap: () {
-                    Navigator.push<void>(
-                      context,
-                      MaterialPageRoute<void>(
-                        builder: (_) => AperturaFichaYColaDeAtencionScreen(user: user),
+                      _MenuCard(
+                        icon: Icons.qr_code_2_rounded,
+                        label: 'Mis Recetas',
+                        iconColor: AppColors.mentaVibrante,
+                        bgColor: AppColors.mentaSuave,
+                        onTap: () {
+                          Navigator.push<void>(
+                            context,
+                            MaterialPageRoute<void>(
+                              builder: (_) =>
+                                  const VisualizacionDelExpedienteScreen(selfMode: true),
+                            ),
+                          );
+                        },
                       ),
-                    );
-                  },
-                ),
-                const _MenuCard(
-                  icon: Icons.science_outlined,
-                  label: 'Laboratorio',
-                  iconColor: AppColors.azulElectrico,
-                  bgColor: AppColors.azulCielo,
-                ),
-                const _MenuCard(
-                  icon: Icons.medication_outlined,
-                  label: 'Farmacia',
-                  iconColor: AppColors.mentaVibrante,
-                  bgColor: AppColors.mentaSuave,
-                ),
-              ],
+                    ]
+                  // ── Menú del PERSONAL de salud ───────────────────────────
+                  : [
+                      _MenuCard(
+                        icon: Icons.people_outline_rounded,
+                        label: 'Pacientes',
+                        iconColor: AppColors.azulPuro,
+                        bgColor: AppColors.azulCielo,
+                        onTap: () {
+                          Navigator.push<void>(
+                            context,
+                            MaterialPageRoute<void>(
+                              builder: (_) => const RegistroYBusquedaDePacientesScreen(),
+                            ),
+                          );
+                        },
+                      ),
+                      _MenuCard(
+                        icon: Icons.assignment_outlined,
+                        label: 'Consultas',
+                        iconColor: AppColors.mentaVibrante,
+                        bgColor: AppColors.mentaSuave,
+                        onTap: () {
+                          Navigator.push<void>(
+                            context,
+                            MaterialPageRoute<void>(
+                              builder: (_) => AperturaFichaYColaDeAtencionScreen(user: user),
+                            ),
+                          );
+                        },
+                      ),
+                      const _MenuCard(
+                        icon: Icons.science_outlined,
+                        label: 'Laboratorio',
+                        iconColor: AppColors.azulElectrico,
+                        bgColor: AppColors.azulCielo,
+                      ),
+                      const _MenuCard(
+                        icon: Icons.medication_outlined,
+                        label: 'Farmacia',
+                        iconColor: AppColors.mentaVibrante,
+                        bgColor: AppColors.mentaSuave,
+                      ),
+                    ],
             ),
 
             const SizedBox(height: 28),

@@ -41,4 +41,7 @@ class UserModel {
   String get role {
     return groups.isNotEmpty ? groups.first : 'Sin rol asignado';
   }
+
+  /// Sprint 5 — usuario-paciente de la app móvil (ve su propio expediente).
+  bool get esPaciente => groups.contains('Paciente');
 }

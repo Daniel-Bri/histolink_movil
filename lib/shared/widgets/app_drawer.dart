@@ -5,6 +5,7 @@ import 'package:histolink/GestionDeUsuarios/LoginYAutenticacion/services/auth_se
 import 'package:histolink/GestionDeUsuarios/LoginYAutenticacion/screens/login_screen.dart';
 import 'package:histolink/shared/services/fcm_service.dart';
 import 'package:histolink/GestionDeUsuarios/RegistroYBusquedaDePacientes/screens/registro_y_busqueda_de_pacientes_screen.dart';
+import 'package:histolink/GestionDeUsuarios/VisualizacionDelExpediente/screens/visualizacion_del_expediente_screen.dart';
 import 'package:histolink/AtencionClinica/SolicitudDeEstudios/screens/solicitud_de_estudios_screen.dart';
 import 'package:histolink/AtencionClinica/RegistroDeTriaje/screens/registro_de_triaje_screen.dart';
 import 'package:histolink/AtencionClinica/AperturaFichaYColaDeAtencion/screens/apertura_ficha_y_cola_de_atencion_screen.dart';
@@ -64,10 +65,20 @@ class _NavSection {
 }
 
 final _sections = <_NavSection>[
+  // Sprint 5 — sección exclusiva del rol Paciente (app móvil)
+  _NavSection(title: 'Mi Salud', items: [
+    _NavItem(
+      label: 'Mi Expediente',
+      icon: Icons.folder_shared_outlined,
+      roles: ['Paciente'],
+      screenBuilder: (_) => const VisualizacionDelExpedienteScreen(selfMode: true),
+    ),
+  ]),
   _NavSection(title: 'Gestión de Usuarios', items: [
     _NavItem(
       label: 'Pacientes',
       icon: Icons.people_outline_rounded,
+      roles: ['Médico', 'Enfermera', 'Administrativo', 'Director'],
       screenBuilder: (_) => const RegistroYBusquedaDePacientesScreen(),
     ),
   ]),

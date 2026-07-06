@@ -49,4 +49,38 @@ class ExpedienteService {
             .toString();
     throw ExpedienteApiException(message, statusCode: response.statusCode, data: data);
   }
+
+  /// Sprint 5 — Expediente del propio paciente autenticado (rol Paciente).
+  /// Resuelve el paciente por el email del usuario; no requiere ID.
+  Future<ExpedienteResumido> obtenerMiExpediente() async {
+    final token = await _authService.getToken();
+    if (token == null || token.isEmpty) {
+      throw const ExpedienteApiException(
+        'Sesión no válida. Vuelve a iniciar sesión.',
+        statusCode: 401,
+      );
+    }
+
+    final response = await http.get(
+      ApiConfig.uri('/api/expediente/mi-expediente/'),
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
+    );
+
+    if (response.statusCode == 200) {
+      return ExpedienteResumido.fromJson(
+        jsonDecode(response.body) as Map<String, dynamic>,
+      );
+    }
+
+    final dynamic decoded = jsonDecode(response.body);
+    final data = decoded is Map<String, dynamic> ? decoded : <String, dynamic>{};
+    final message = (data['error'] ??
+            data['detail'] ??
+            'No se pudo cargar tu expediente.')
+        .toString();
+    throw ExpedienteApiException(message, statusCode: response.statusCode, data: data);
+  }
 }

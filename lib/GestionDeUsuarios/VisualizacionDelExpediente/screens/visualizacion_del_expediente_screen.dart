@@ -1,7 +1,9 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:histolink/AtencionClinica/EmisionDeRecetaMedica/models/receta_model.dart';
 import 'package:histolink/GestionDeUsuarios/VisualizacionDelExpediente/models/expediente_resumido_model.dart';
 import 'package:histolink/GestionDeUsuarios/VisualizacionDelExpediente/services/expediente_service.dart';
+import 'package:histolink/IA_Blockchain/AutenticacionDeReceta/screens/recetas_de_consulta_screen.dart';
 import 'package:histolink/IA_Blockchain/VerificacionDeIntegridadDocumentos/screens/verificacion_de_integridad_screen.dart';
 import 'package:histolink/SeguridadAvanzadaYAdministracion/BreakGlass_Solicitud/models/break_glass_solicitud_model.dart';
 import 'package:histolink/SeguridadAvanzadaYAdministracion/BreakGlass_Solicitud/screens/break_glass_solicitud_screen.dart';
@@ -33,8 +35,16 @@ int? _edad(String fechaNac) {
 
 // ── Screen ────────────────────────────────────────────────────────────────────
 class VisualizacionDelExpedienteScreen extends StatefulWidget {
-  const VisualizacionDelExpedienteScreen({super.key, this.pacienteId});
+  const VisualizacionDelExpedienteScreen({
+    super.key,
+    this.pacienteId,
+    this.selfMode = false,
+  });
   final int? pacienteId;
+
+  /// Sprint 5 — modo paciente: carga el expediente propio (por email), sin
+  /// buscador ni break-glass.
+  final bool selfMode;
 
   @override
   State<VisualizacionDelExpedienteScreen> createState() =>
@@ -55,7 +65,7 @@ class _VisualizacionDelExpedienteScreenState
   Duration _breakGlassRemaining = Duration.zero;
   Timer? _breakGlassTimer;
 
-  bool get _modoDirecto => widget.pacienteId != null;
+  bool get _modoDirecto => widget.pacienteId != null || widget.selfMode;
 
   @override
   void initState() {
@@ -132,6 +142,25 @@ class _VisualizacionDelExpedienteScreenState
   }
 
   Future<void> _cargar() async {
+    // Sprint 5 — modo paciente: expediente propio por email, sin ID ni break-glass.
+    if (widget.selfMode) {
+      setState(() { _loading = true; _error = null; });
+      try {
+        final exp = await _service.obtenerMiExpediente();
+        if (!mounted) return;
+        setState(() => _exp = exp);
+      } on ExpedienteApiException catch (e) {
+        if (!mounted) return;
+        setState(() { _error = e.message; _exp = null; });
+      } catch (e) {
+        if (!mounted) return;
+        setState(() { _error = e.toString().replaceFirst('Exception: ', ''); _exp = null; });
+      } finally {
+        if (mounted) setState(() => _loading = false);
+      }
+      return;
+    }
+
     final id = int.tryParse(_idCtrl.text.trim());
     if (id == null || id <= 0) {
       setState(() { _error = 'Ingresa un ID válido.'; _exp = null; });
@@ -165,9 +194,11 @@ class _VisualizacionDelExpedienteScreenState
     return Scaffold(
       backgroundColor: AppColors.fondo,
       appBar: AppBar(
-        title: Text(_exp != null
-            ? '${_exp!.nombres} ${_exp!.apellidoPaterno}'
-            : 'Expediente'),
+        title: Text(widget.selfMode
+            ? 'Mi Expediente'
+            : _exp != null
+                ? '${_exp!.nombres} ${_exp!.apellidoPaterno}'
+                : 'Expediente'),
         backgroundColor: AppColors.azulElectrico,
         foregroundColor: Colors.white,
         elevation: 0,
@@ -453,7 +484,8 @@ class _AtencionesSectionCard extends StatelessWidget {
         if (exp.consultas.isEmpty)
           const _Vacio(texto: 'Sin consultas registradas')
         else
-          ...exp.consultas.map((c) => _ConsultaItem(c: c)),
+          // Sprint 5 — recetas embebidas por consulta (ver botón "Ver Receta")
+          ...exp.consultas.map((c) => _ConsultaItem(c: c, recetas: c.recetas)),
       ]),
     );
   }
@@ -510,8 +542,10 @@ class _TriajeItem extends StatelessWidget {
 }
 
 class _ConsultaItem extends StatelessWidget {
-  const _ConsultaItem({required this.c});
+  const _ConsultaItem({required this.c, this.recetas = const []});
   final ConsultaResumen c;
+  // Sprint 5 — recetas de esta consulta (badge "Ver Receta" solo si hay)
+  final List<RecetaModel> recetas;
 
   @override
   Widget build(BuildContext context) {
@@ -563,6 +597,37 @@ class _ConsultaItem extends StatelessWidget {
               style: OutlinedButton.styleFrom(
                 foregroundColor: AppColors.azulElectrico,
                 side: const BorderSide(color: AppColors.azulElectrico),
+                padding: const EdgeInsets.symmetric(vertical: 8),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+              ),
+            ),
+          ),
+        ],
+        // Sprint 5 — solo las consultas CON receta muestran este botón
+        if (recetas.isNotEmpty) ...[
+          const SizedBox(height: 8),
+          SizedBox(
+            width: double.infinity,
+            child: OutlinedButton.icon(
+              onPressed: () => Navigator.push(
+                context,
+                MaterialPageRoute<void>(
+                  builder: (_) => RecetasDeConsultaScreen(
+                    recetas: recetas,
+                    tituloConsulta: 'Consulta del ${_fechaHora(c.creadoEn)}',
+                  ),
+                ),
+              ),
+              icon: const Icon(Icons.receipt_long_outlined, size: 16),
+              label: Text(
+                recetas.length == 1
+                    ? 'Ver Receta'
+                    : 'Ver Recetas (${recetas.length})',
+                style: const TextStyle(fontSize: 13),
+              ),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: AppColors.mentaVibrante,
+                side: const BorderSide(color: AppColors.mentaVibrante),
                 padding: const EdgeInsets.symmetric(vertical: 8),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
               ),

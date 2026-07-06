@@ -80,6 +80,10 @@ class RecetaModel {
   final int consulta;
   final String? fechaDispensacion;
   final List<DetalleRecetaModel> detalles;
+  // Sprint 5 — Autenticación con Blockchain
+  final String uuid;
+  final int validezDias;
+  final String? fechaVencimiento;
 
   RecetaModel({
     required this.id,
@@ -90,6 +94,9 @@ class RecetaModel {
     required this.consulta,
     this.fechaDispensacion,
     required this.detalles,
+    this.uuid = '',
+    this.validezDias = 30,
+    this.fechaVencimiento,
   });
 
   factory RecetaModel.fromJson(Map<String, dynamic> j) => RecetaModel(
@@ -103,5 +110,8 @@ class RecetaModel {
     detalles: (j['detalles'] as List<dynamic>? ?? [])
         .map((d) => DetalleRecetaModel.fromJson(d as Map<String, dynamic>))
         .toList(),
+    uuid: j['uuid'] ?? '',
+    validezDias: j['validez_dias'] ?? 30,
+    fechaVencimiento: j['fecha_vencimiento'],
   );
 }

@@ -1,3 +1,5 @@
+import 'package:histolink/AtencionClinica/EmisionDeRecetaMedica/models/receta_model.dart';
+
 class AntecedentesResumen {
   final String grupoSanguineo;
   final String alergias;
@@ -48,6 +50,8 @@ class ConsultaResumen {
   final String estadoLabel;
   final String motivoConsulta;
   final String impresionDiagnostica;
+  // Sprint 5 — recetas embebidas por el backend (con uuid para el QR)
+  final List<RecetaModel> recetas;
 
   const ConsultaResumen({
     required this.id,
@@ -56,6 +60,7 @@ class ConsultaResumen {
     required this.estadoLabel,
     required this.motivoConsulta,
     required this.impresionDiagnostica,
+    this.recetas = const [],
   });
 
   bool get esFirmada => estado == 'FIRMADA';
@@ -68,6 +73,10 @@ class ConsultaResumen {
       estadoLabel: (json['estado_label'] ?? json['estado'] ?? '').toString(),
       motivoConsulta: (json['motivo_consulta'] ?? '').toString(),
       impresionDiagnostica: (json['impresion_diagnostica'] ?? '').toString(),
+      recetas: (json['recetas'] as List<dynamic>? ?? [])
+          .whereType<Map<String, dynamic>>()
+          .map(RecetaModel.fromJson)
+          .toList(),
     );
   }
 }
